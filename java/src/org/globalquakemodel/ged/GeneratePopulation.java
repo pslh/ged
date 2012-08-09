@@ -26,7 +26,7 @@ import java.util.Properties;
  */
 public class GeneratePopulation {
 
-	private static final int MAX_FETCH_SIZE = 10;
+	private static final int MAX_FETCH_SIZE = 64; //1024;
 	private static final char DELIMITER = '|';
 
 	public static class Country {
@@ -151,7 +151,8 @@ public class GeneratePopulation {
 			long now = System.currentTimeMillis();
 			if (now > lastTS + 5000) {
 				lastTS = now;
-				System.err.println(" Still working... row " + numRecords);
+				System.err.println(" processing " + country.getCountryIso()
+						+ ", record " + numRecords);
 			}
 		}
 		pointRS.close();
@@ -229,10 +230,12 @@ public class GeneratePopulation {
 	public static void main(final String[] args) {
 		try {
 
-			final int modelID = args.length == 0 ? 1 : Integer
+			final int startID = args.length == 0 ? 1 : Integer
 					.parseInt(args[0]);
 
-			for (int countryId = 1; countryId < 249; countryId++) {
+			final int modelID = args.length < 2 ? 1 : Integer.parseInt(args[0]);
+
+			for (int countryId = startID; countryId < 249; countryId++) {
 				final GeneratePopulation generator = new GeneratePopulation(
 						modelID);
 
