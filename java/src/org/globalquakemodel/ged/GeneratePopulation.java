@@ -1,7 +1,9 @@
 package org.globalquakemodel.ged;
 
+import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.sql.Connection;
@@ -70,7 +72,6 @@ public class GeneratePopulation {
 		public String toString() {
 			return countryName + " " + countryIso + " " + countryID;
 		}
-
 	}
 
 	private final Connection con;
@@ -131,9 +132,7 @@ public class GeneratePopulation {
 	 */
 	public void handleCountry(final Country country, final PrintStream stream)
 			throws SQLException {
-		System.err
-				.println("Populating oqmif.exposure_data with default population for "
-						+ country);
+		System.err.println("Handling country " + country);
 
 		pointStm.setInt(1, country.getCountryID());
 		pointStm.setFetchSize(MAX_FETCH_SIZE);
@@ -163,7 +162,7 @@ public class GeneratePopulation {
 	 * @return Country
 	 * @throws SQLException
 	 */
-	private Country getCountry(final int countryId) throws SQLException {
+	public Country getCountry(final int countryId) throws SQLException {
 		countryInfoStm.setInt(1, countryId);
 		final ResultSet countryInfoRS = countryInfoStm.executeQuery();
 
@@ -230,22 +229,37 @@ public class GeneratePopulation {
 	public static void main(final String[] args) {
 		try {
 
-			final int countryId = args.length > 0 ? Integer.parseInt(args[0])
-					: 40; // CAN
+			final int modelID = args.length == 0 ? 1 : Integer
+					.parseInt(args[0]);
 
-			// TODO obtain model ID from somewhere, command line? Properties?
-			final GeneratePopulation generator = new GeneratePopulation(1);
+			for (int countryId = 1; countryId < 249; countryId++) {
+				final GeneratePopulation generator = new GeneratePopulation(
+						modelID);
 
-			final Country country = generator.getCountry(countryId);
+				final Country country = generator.getCountry(countryId);
 
-			System.err.println("Handling country " + country);
+				final PrintStream stream = getStream(country);
+				generator.handleCountry(country, stream);
+				generator.shutdown();
 
-			generator.handleCountry(country, System.out);
-
-			generator.shutdown();
+				stream.close();
+			}
 
 		} catch (final Exception exception) {
 			exception.printStackTrace();
 		}
+	}
+
+	/**
+	 * @param country
+	 * @return
+	 * @throws FileNotFoundException
+	 */
+	private static PrintStream getStream(Country country)
+			throws FileNotFoundException {
+		final FileOutputStream fos = new FileOutputStream(
+				country.getCountryIso() + ".sqlin");
+
+		return new PrintStream(new BufferedOutputStream(fos));
 	}
 }
