@@ -31,7 +31,7 @@ import java.sql.SQLException;
 import java.util.Properties;
 
 /**
- * Query population data from GED DB, and output data suitable for inporting
+ * Query population data from GED DB, and output data suitable for importing
  * into an OpenQuake oqmif.exposure_data table using a SQL statement of the
  * form:
  * 
@@ -43,7 +43,10 @@ import java.util.Properties;
  */
 public class GeneratePopulation {
 
-	private static final int MAX_FETCH_SIZE = 64; //1024;
+	// TODO - make this configurable - for local queries use 1024 
+	// for remote queries 64
+	private static final int MAX_FETCH_SIZE = 1024; //64; 
+	
 	private static final char DELIMITER = '|';
 
 	public static class Country {
@@ -92,7 +95,7 @@ public class GeneratePopulation {
 	}
 
 	private final Connection con;
-	private final int modelID;
+	private final int modelID; 
 
 	private final PreparedStatement countryInfoStm;
 	private final PreparedStatement pointStm;
@@ -246,13 +249,16 @@ public class GeneratePopulation {
 	 */
 	public static void main(final String[] args) {
 		try {
-
 			final int startID = args.length == 0 ? 1 : Integer
 					.parseInt(args[0]);
 
-			final int modelID = args.length < 2 ? 1 : Integer.parseInt(args[0]);
+			final int max_country_id = args.length < 2 ? 249 : Integer.parseInt(args[1]);
 
-			for (int countryId = startID; countryId < 249; countryId++) {
+			
+			final int modelID = args.length < 3 ? 1 : Integer.parseInt(args[2]);
+
+			
+			for (int countryId = startID; countryId < max_country_id ; countryId++) {
 				final GeneratePopulation generator = new GeneratePopulation(
 						modelID);
 
