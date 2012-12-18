@@ -17,234 +17,265 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with OpenQuake.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Read GRUMP population and urban-extent data into text file
+for import into DB
+"""
+
 from osgeo import gdal
 from osgeo.gdalconst import GA_ReadOnly
 import sys
 
 #
 # Raster file paths
-# 
+#
 # TODO convert to command line arguments
 #
-_urbanFile = '/data/ged/rebuild-pop/urban-rural/prj.adf'
-_popFile = '/data/ged/rebuild-pop/pop-input/prj.adf'
+_URBAN_FILE = '/data/ged/rebuild-pop/urban-rural/prj.adf'
+_POP_FILE = '/data/ged/rebuild-pop/pop-input/prj.adf'
+
+
+def _open_raster_file(filepath):
+    """
+    Open the given raster file for reading, raise an IOError on failure.
+    Note does not actually read the real data yes, see load_data
+    """
+    #
+    # Force use of float64 for population data
+    # Note that this requires use of GDAL 1.9 (see env.sh)
+    # See http://lists.osgeo.org/pipermail/gdal-dev/2006-July/009570.html
+    #
+    gdal.SetConfigOption('AAIGRID_DATATYPE', 'Float64')
+    _handle = gdal.Open(filepath, GA_ReadOnly)
+    # Clear flag after open
+    gdal.SetConfigOption('AAIGRID_DATATYPE', None)
+
+    if _handle is None:
+        raise IOError("Failed to open file {0}\n".format(filepath))
+    return _handle
+
 
 class RasterFile(object):
     """
     Representation of a raster file
     """
 
-    def _openFile(self, filepath):
-        """
-        Open the given file for reading, raise an IOError on failure.
-        Note does not actually read the real data yes, see loadData
-        """
-        
-        self._filepath=filepath
-        #
-        # Force use of float64 for population data
-        # Note that this requires use of GDAL 1.9 (see env.sh)
-        # See http://lists.osgeo.org/pipermail/gdal-dev/2006-July/009570.html
-        #
-        gdal.SetConfigOption('AAIGRID_DATATYPE', 'Float64')
-        self._handle = gdal.Open(filepath, GA_ReadOnly) # Clear flag after open
-        gdal.SetConfigOption('AAIGRID_DATATYPE', None)
-        
-        if self._handle is None:
-            raise IOError("Failed to open file {0}\n".format(filepath));
- 
-    def _initMetaData(self):
+    def __init__(self, filepath):
+        self.data = None
+        self._filepath = filepath
+        self._handle = _open_raster_file(filepath)
         self.width = self._handle.RasterXSize
         self.height = self._handle.RasterYSize
         _transform = self._handle.GetGeoTransform()
-        self.xOrigin = _transform[0]
-        self.yOrigin = _transform[3]
-        self.pixelWidth = _transform[1]
-        self.pixelHeight = _transform[5]
-        
-    def __init__(self,filepath):
-        self._openFile(filepath)
-        self._initMetaData()
-        
-    def loadData(self):
+        self.x_origin = _transform[0]
+        self.y_origin = _transform[3]
+        self.pixel_width = _transform[1]
+        self.pixel_height = _transform[5]
+
+    def load_data(self):
         """
         Load raster files into a (huge) array.
-        For smaller machines a different approach (e.g. iterate over 
-        blocks) should be used
+        For smaller machines a different approach should be used, for example
+        by iterating over blocks of cells
         """
         _band = self._handle.GetRasterBand(1)
         sys.stderr.write('Loading data from {0}...\n'.format(self._filepath))
-        
+
         self.data = _band.ReadAsArray(0, 0, self.width, self.height)
         if self.data is None:
-            raise IOError('Failed to load data from {0}'.format(self._filepath))
-        
-        sys.stderr.write('DONE Loading data from {0}...\n'.format(self._filepath))
+            raise IOError('Failed to load data from {0}'
+                          .format(self._filepath))
 
-    def getLon(self,x):
+        sys.stderr.write('DONE Loading data from {0}...\n'
+                         .format(self._filepath))
+
+    def lon(self, x_pixel):
         """
-        The longitude corresponding to the given x (pixel) value
+        The longitude corresponding to the given get_x (pixel) value
         """
         # Note + 0.5 to place point in centre of pixel
-        return ((x+0.5) * self.pixelWidth) + self.xOrigin
+        return ((x_pixel + 0.5) * self.pixel_width) + self.x_origin
 
-    def getLat(self,y):
+    def lat(self, y_line):
         """
-        The latitude corresponding to the given y (pixel) value
+        The latitude corresponding to the given get_y (pixel) value
         """
         # Note + 0.5 to place point in centre of pixel
-        return ((y+0.5) * self.pixelHeight) + self.yOrigin
+        return ((y_line + 0.5) * self.pixel_height) + self.y_origin
 
-    def getX(self,lon):
+    def get_x(self, lon):
         """
         The x (pixel) value for the given longitude
         """
-        return int((lon - self.xOrigin) / self.pixelWidth)
-        
-    def getY(self,lat):
+        return int((lon - self.x_origin) / self.pixel_width)
+
+    def get_y(self, lat):
         """
         The y (line) value for the given latitude
         """
-        return int((lat - self.yOrigin) / self.pixelHeight)
+        return int((lat - self.y_origin) / self.pixel_height)
 
 
 class _CellCountValidator(object):
     """
     Helper class to check that cell counts are self-consistent
     """
-    
+
     def __init__(self, raster):
-        self.raster=raster
-        
+        self.raster = raster
+
         #
         # Counters for different types of cell
-        # Used for validation later 
-        #
-        self.waterCells=0
-        self.landCells=0
-        self.skippedCells=0
-        
-        self.urbanCells=0
-        self.ruralCells=0
-        self.nullCells=0
-        
-        self.totalRead=0
+        # Used for validation later
 
-    def validate(self, startx=0, starty=0):
-        """    
+        self.water = 0
+        self.land = 0
+        self.skipped = 0
+
+        self.urban = 0
+        self.rural = 0
+        self.null = 0
+
+        self.total_read = 0
+
+    def validate(self, startx=0):
+        """
         Validation checks - do our numbers add up?
         """
-        
-        totalCells = (self.raster.width - startx) * self.raster.height
-        expectedCells = totalCells - self.skippedCells
-        waterAndLandCells = self.waterCells + self.landCells
-        urnSum = self.urbanCells + self.ruralCells + self.nullCells
-        sys.stderr.write('DONE total cells='+
-                         '{0}x{1} = {2} skipped={3} read={4} expected={5}\n'
-                            .format(self.raster.width - startx, self.raster.height, 
-                                    totalCells, self.skippedCells, self.totalRead,
-                                    expectedCells))
+
+        total = (self.raster.width - startx) * self.raster.height
+        expected = total - self.skipped
+        water_and_land = self.water + self.land
+        urban_rural_num_sum = self.urban + self.rural + self.null
+
+        sys.stderr.write('DONE total_read cells=' +
+                         '{0} x{1} = {2} skipped={3} read={4} expected={5}\n'
+                         .format(self.raster.width - startx,
+                                 self.raster.height,
+                                 total, self.skipped,
+                                 self.total_read,
+                                 expected))
+
         sys.stderr.write(' water={0}, land={1} sum={2}\n'
-                            .format(self.waterCells, self.landCells, 
-                                    waterAndLandCells))
+                         .format(self.water, self.land,
+                                 water_and_land))
+
         sys.stderr.write(' raster={0} rural={1} null={2} sum={3}\n'
-                            .format(self.urbanCells, self.ruralCells, self.nullCells,
-                                     urnSum))
-        if self.totalRead != expectedCells:
-            sys.stderr.write('WARNING cells read={0} != total-skipped={1}\n'
-                                .format(self.totalRead, expectedCells))
-        if totalCells != waterAndLandCells + self.skippedCells:
-            sys.stderr.write('WARNING total cells={0} != land+water+skipped={1}\n'
-                                .format(totalCells, waterAndLandCells + 
-                                            self.skippedCells))
-        if self.landCells != urnSum:
-            sys.stderr.write('WARNING total land cells={0} != u+r+n={1}\n'
-                                .format(self.landCells, urnSum))
+                         .format(self.urban, self.rural,
+                                 self.null,
+                                 urban_rural_num_sum))
+
+        if self.total_read != expected:
+            sys.stderr.write('WARNING cells read=' +
+                             '{0} != total_read-skipped={1}\n'
+                             .format(self.total_read, expected))
+        if total != water_and_land + self.skipped:
+
+            sys.stderr.write('WARNING total_read=' +
+                             '{0} != land+water+skipped={1}\n'
+                             .format(total,
+                                     water_and_land +
+                                     self.skipped))
+
+        if self.land != urban_rural_num_sum:
+            sys.stderr.write('WARNING total_read land cells={0} != u+r+n={1}\n'
+                             .format(self.land, urban_rural_num_sum))
 
 
-def _extractData(urban, pop, validator, startx=0, starty=0):
-    for x in range(startx,urban.width):
-    
-        lon = urban.getLon(x)
-        popX = pop.getX(lon)
-    
-        # 
+def _extract_data(urban, pop, validator, startx=0, starty=0):
+    """
+    Loop over rasters, print out values for land-mass cells, update counters
+    """
+    for urban_x in range(startx, urban.width):
+
+        lon = urban.lon(urban_x)
+        pop_x = pop.get_x(lon)
+
+        #
         # The urban extent and population rasters are not the same size
         # avoid walking off the edge
         #
-        if popX >= pop.width:
-            sys.stderr.write('INFO no population values for '+
-                             'x={0} lon={1}, skipping\n'.format(x,lon))
-            validator.skippedCells += urban.height
+        if pop_x >= pop.width:
+            sys.stderr.write('INFO no population values for ' +
+                             'x={0} lon={1}, skipping\n'.format(urban_x, lon))
+            validator.skipped += urban.height
             continue
-    
-        for y in range(starty,urban.height):
-            lat = urban.getLat(y)
-            popY = pop.getY(lat)
-    
-            urValue = urban.data[y, x]
-    
-            if popY >= pop.height:
+
+        for urban_y in range(starty, urban.height):
+            lat = urban.lat(urban_y)
+            pop_y = pop.get_y(lat)
+
+            ur_value = urban.data[urban_y, urban_x]
+
+            if pop_y >= pop.height:
                 sys.stderr.write(
-                    'INFO no population values for x={0},y={1} urValue={2}\n'.format(
-                    x,y,urValue))
-                validator.skippedCells += urban.height-y
+                    'INFO no population values for urban_x=' +
+                    '{0},urban_y={1} ur_value={2}\n'.format(
+                    urban_x, urban_y, ur_value))
+                validator.skipped += urban.height - urban_y
                 continue
-    
-            popValue = pop.data[popY, popX]
-            validator.totalRead += 1            
-    
-            isUrban=False
-            if urValue == 1:
-                isUrban = 'f'
-                validator.ruralCells += 1
-    
-            elif urValue == 2:
-                isUrban = 't'
-                validator.urbanCells += 1
-    
-            elif urValue == 255:
-                # no landCells mass
-                if popValue == 0:
-                    validator.waterCells += 1
-                    continue
+
+            pop_value = pop.data[pop_y, pop_x]
+            validator.total_read += 1
+
+            is_urban = None
+            if ur_value == 1:
+                is_urban = 'f'
+                validator.rural += 1
+
+            elif ur_value == 2:
+                is_urban = 't'
+                validator.urban += 1
+
+            elif ur_value == 255:
+                # no land mass
+                if pop_value == 0:
+                    validator.water += 1
+                    continue  # do NOT write output or update land
                 else:
+                    #
+                    # GRUMP 1995 Urban/Rural mapping has null values for
+                    # the Maldives; we cannot simply assume null implies water
+                    #
                     sys.stderr.write(
-                        'WARNING NULL U/R values for x={0},y={1}, lat={2},lon={3}, pop={4}\n'.format(
-                        x,y,lat,lon,popValue))
-                    isUrban='\\N' # NULL SQL code
-                    validator.nullCells += 1
+                        'WARNING NULL U/R values for ' +
+                        'x={0},get_y={1}, lat={2},lon={3}, pop={4}\n'.format(
+                        urban_x, urban_y, lat, lon, pop_value))
+                    is_urban = '\\N'  # NULL SQL code
+                    validator.null += 1
             else:
                 sys.stderr.write(
-                    'ERROR Unnexpected U/R value {4} found at x={0},y={1}, lat={2},lon={3}\n'+
+                    'ERROR Unexpected U/R value ' +
+                    '{4} found at get_x={0},get_y={1}, lat={2},lon={3}\n' +
                     ' Check file format and GDAL version\n'.format(
-                    x,y,lat,lon,urValue))
+                    urban_x, urban_y, lat, lon, ur_value))
                 sys.exit(1)
-    
-            print str(lat)+'\t'+str(lon)+'\t'+str(popValue)+'\t'+str(isUrban)
-            validator.landCells += 1
-            
+
+            sys.stdout.write('{0}\t{1}\t{2}\t{3}\n'.format(
+                lat, lon, pop_value, is_urban))
+            validator.land += 1
+
 
 def main():
-    """ 
+    """
     Read GRUMP population and urban-extent data into text file
     for import into DB
     """
 
-    urban = RasterFile(_urbanFile)
-    pop = RasterFile(_popFile)
+    urban = RasterFile(_URBAN_FILE)
+    pop = RasterFile(_POP_FILE)
 
     # Use for end-game testing
     #_startx=urban.width-2#width-10 #30322 #22360
     # TODO make this a command line argument
-    _startx=0;
-    
-    validator= _CellCountValidator(urban)
+    _startx = 0
 
-    urban.loadData()
-    pop.loadData()
-    
-    _extractData(urban, pop, validator, _startx)
+    validator = _CellCountValidator(urban)
+
+    urban.load_data()
+    pop.load_data()
+
+    _extract_data(urban, pop, validator, _startx)
 
     # After loading data, check the validate cell counts
     validator.validate(_startx)
