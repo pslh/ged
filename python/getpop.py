@@ -38,7 +38,7 @@ _POP_FILE = '/data/ged/rebuild-pop/pop-input/prj.adf'
 def _open_raster_file(filepath):
     """
     Open the given raster file for reading, raise an IOError on failure.
-    Note does not actually read the real data yes, see load_data
+    Note does not actually read the real data yet, see load_data
     """
     #
     # Force use of float64 for population data
