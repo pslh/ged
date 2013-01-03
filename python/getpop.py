@@ -255,7 +255,7 @@ def main():
     # TODO make this a command line argument
     _startx = 0
 
-    validator = _CellCountValidator(urban)
+    validator = _CellCountValidator(pop)
 
     urban.load_data()
     pop.load_data()
