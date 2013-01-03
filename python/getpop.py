@@ -194,16 +194,12 @@ def _extract_data(urban, pop, validator, startx=0, starty=0):
         for pop_y in range(starty, pop.height):
             pop_value = pop.data[pop_y, pop_x]
             validator.total_read += 1
-            
+
             lat = pop.lat(pop_y)
             urban_y = urban.get_y(lat)
 
-            if urban_y >= urban.height:
-                sys.stderr.write(
-                    'INFO no urban value for pop_x=' +
-                    '{0},pop_y={1} pop_value={2} lat={3} lon={4}\n'.format(
-                    pop_x, pop_y, pop_value, lat,lon))
-                ur_value=255
+            if urban_y >= urban.height or urban_x >= urban.width:
+                ur_value = 255
             else:
                 ur_value = urban.data[urban_y, urban_x]
 
