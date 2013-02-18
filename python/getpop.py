@@ -181,6 +181,9 @@ class _CellCountValidator(object):
             sys.stderr.write('WARNING total_read land cells={0} != u+r+n={1}\n'
                              .format(self.land, urban_rural_num_sum))
 
+def _grid_id(lat, lon):
+    return ((lon + 0.00416666666666667) * 120) << 16 | \
+        ((lat+ 0.00416666666666667) * 120) & 65535
 
 def _extract_data(urban, pop, validator, startx=0, starty=0):
     """
@@ -236,7 +239,8 @@ def _extract_data(urban, pop, validator, startx=0, starty=0):
                     urban_x, urban_y, lat, lon, ur_value))
                 sys.exit(1)
 
-            sys.stdout.write('{0}\t{1}\t{2}\t{3}\n'.format(
+            sys.stdout.write('{0}\t{1}\t{2}\t{3}\t{4}\n'.format(
+                _grid_id(lat,lon),
                 lat, lon, pop_value, is_urban))
             validator.land += 1
 
@@ -251,9 +255,9 @@ def main():
     pop = RasterFile(_POP_FILE)
 
     # Use for end-game testing
-    #_startx=urban.width-2#width-10 #30322 #22360
+    _startx=urban.width-2#width-10 #30322 #22360
     # TODO make this a command line argument
-    _startx = 0
+    #_startx = 0
 
     validator = _CellCountValidator(pop)
 
