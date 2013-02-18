@@ -186,37 +186,22 @@ def _extract_data(urban, pop, validator, startx=0, starty=0):
     """
     Loop over rasters, print out values for land-mass cells, update counters
     """
-    for urban_x in range(startx, urban.width):
+    for pop_x in range(startx, pop.width):
 
-        lon = urban.lon(urban_x)
-        pop_x = pop.get_x(lon)
+        lon = pop.lon(pop_x)
+        urban_x = urban.get_x(lon)
 
-        #
-        # The urban extent and population rasters are not the same size
-        # avoid walking off the edge
-        #
-        if pop_x >= pop.width:
-            sys.stderr.write('INFO no population values for ' +
-                             'x={0} lon={1}, skipping\n'.format(urban_x, lon))
-            validator.skipped += urban.height
-            continue
-
-        for urban_y in range(starty, urban.height):
-            lat = urban.lat(urban_y)
-            pop_y = pop.get_y(lat)
-
-            ur_value = urban.data[urban_y, urban_x]
-
-            if pop_y >= pop.height:
-                sys.stderr.write(
-                    'INFO no population values for urban_x=' +
-                    '{0},urban_y={1} ur_value={2}\n'.format(
-                    urban_x, urban_y, ur_value))
-                validator.skipped += urban.height - urban_y
-                continue
-
+        for pop_y in range(starty, pop.height):
             pop_value = pop.data[pop_y, pop_x]
             validator.total_read += 1
+
+            lat = pop.lat(pop_y)
+            urban_y = urban.get_y(lat)
+
+            if urban_y >= urban.height or urban_x >= urban.width:
+                ur_value = 255
+            else:
+                ur_value = urban.data[urban_y, urban_x]
 
             is_urban = None
             if ur_value == 1:
@@ -270,7 +255,7 @@ def main():
     # TODO make this a command line argument
     _startx = 0
 
-    validator = _CellCountValidator(urban)
+    validator = _CellCountValidator(pop)
 
     urban.load_data()
     pop.load_data()
