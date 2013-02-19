@@ -34,6 +34,7 @@ import math
 #
 _URBAN_FILE = '/data/ged/rebuild-pop/urban-rural/prj.adf'
 _POP_FILE = '/data/ged/rebuild-pop/pop-input/prj.adf'
+_AREA_FILE = '/data/ged/rebuild-pop/land-area/prj.adf'
 
 
 def _grid_id(lat, lon):
@@ -202,7 +203,7 @@ class _CellCountValidator(object):
                              .format(self.land, urban_rural_num_sum))
 
 
-def _extract_data(urban, pop, validator, startx=0, starty=0):
+def _extract_data(urban, pop, area, validator, startx=0, starty=0):
     """
     Loop over rasters, print out values for land-mass cells, update counters
     """
@@ -210,6 +211,7 @@ def _extract_data(urban, pop, validator, startx=0, starty=0):
 
         lon = pop.lon(pop_x)
         urban_x = urban.get_x(lon)
+        area_x = area.get_x(lon)
 
         for pop_y in range(starty, pop.height):
             pop_value = pop.data[pop_y, pop_x]
@@ -263,10 +265,16 @@ def _extract_data(urban, pop, validator, startx=0, starty=0):
                     ' Check file format and GDAL version\n'.format(
                     urban_x, urban_y, lat, lon, ur_value))
                 sys.exit(1)
+            
+            area_y = area.get_y(lat)
+            if area_y >= area.height or area_x >= area.width:
+                area_value = 0
+            else:
+                area_value = area.data[area_x, area_y]
 
-            sys.stdout.write('{0}\t{1}\t{2}\t{3}\t{4}\n'.format(
+            sys.stdout.write('{0}\t{1}\t{2}\t{3}\t{4}\t{5}\n'.format(
                 _grid_id(lat, lon),
-                lat, lon, pop_value, is_urban))
+                lat, lon, pop_value, is_urban, area_value))
             validator.land += 1
 
 
@@ -278,6 +286,7 @@ def main():
 
     urban = RasterFile(_URBAN_FILE)
     pop = RasterFile(_POP_FILE)
+    area = RasterFile(_AREA_FILE)
 
     # Use for end-game testing
     _startx = urban.width - 2  # width-10 #30322 #22360
@@ -288,8 +297,9 @@ def main():
 
     urban.load_data()
     pop.load_data()
+    area.load_data()
 
-    _extract_data(urban, pop, validator, _startx)
+    _extract_data(urban, pop, area, validator, _startx)
 
     # After loading data, check the validate cell counts
     validator.validate(_startx)
