@@ -289,9 +289,9 @@ def main():
     area = RasterFile(_AREA_FILE)
 
     # Use for end-game testing
-    _startx = urban.width - 2  # width-10 #30322 #22360
+    #_startx = urban.width - 2  # width-10 #30322 #22360
     # TODO make this a command line argument
-    #_startx = 0
+    _startx = 0
 
     validator = _CellCountValidator(pop)
 
