@@ -270,7 +270,7 @@ def _extract_data(urban, pop, area, validator, startx=0, starty=0):
             if area_y >= area.height or area_x >= area.width:
                 area_value = 0
             else:
-                area_value = area.data[area_x, area_y]
+                area_value = area.data[area_y, area_x]
 
             sys.stdout.write('{0}\t{1}\t{2}\t{3}\t{4}\t{5}\n'.format(
                 _grid_id(lat, lon),
