@@ -156,7 +156,6 @@ class _CellCountValidator(object):
 
         self.urban = 0
         self.rural = 0
-        self.null = 0
 
         self.total_read = 0
 
@@ -168,7 +167,7 @@ class _CellCountValidator(object):
         total = (self.raster.width - startx) * self.raster.height
         expected = total - self.skipped
         water_and_land = self.water + self.land
-        urban_rural_num_sum = self.urban + self.rural + self.null
+        urban_rural_num_sum = self.urban + self.rural
 
         sys.stderr.write('DONE total_read cells=' +
                          '{0} x{1} = {2} skipped={3} read={4} expected={5}\n'
@@ -182,9 +181,8 @@ class _CellCountValidator(object):
                          .format(self.water, self.land,
                                  water_and_land))
 
-        sys.stderr.write(' raster={0} rural={1} null={2} sum={3}\n'
+        sys.stderr.write(' raster={0} rural={1} sum={2}\n'
                          .format(self.urban, self.rural,
-                                 self.null,
                                  urban_rural_num_sum))
 
         if self.total_read != expected:
@@ -244,12 +242,20 @@ def _extract_data(urban, pop, validator, startx=0, starty=0):
                     # GRUMP 1995 Urban/Rural mapping has null values for
                     # the Maldives; we cannot simply assume null implies water
                     #
+                    # For GRUMP 2000, the only such area is the Maldives, so
+                    # we can safely apply the 5000 pop value threshold to
+                    # determine is_urban.
+                    #
                     sys.stderr.write(
                         'WARNING NULL U/R values for ' +
                         'x={0},get_y={1}, lat={2},lon={3}, pop={4}\n'.format(
                         urban_x, urban_y, lat, lon, pop_value))
-                    is_urban = '\\N'  # NULL SQL code
-                    validator.null += 1
+                    if pop_value >= 5000:
+                        is_urban = 't'
+                        validator.urban += 1
+                    else:
+                        is_urban = 'f'
+                        validator.rural += 1
             else:
                 sys.stderr.write(
                     'ERROR Unexpected U/R value ' +
