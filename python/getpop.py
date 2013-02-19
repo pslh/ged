@@ -25,6 +25,7 @@ for import into DB
 from osgeo import gdal
 from osgeo.gdalconst import GA_ReadOnly
 import sys
+import math
 
 #
 # Raster file paths
@@ -182,8 +183,11 @@ class _CellCountValidator(object):
                              .format(self.land, urban_rural_num_sum))
 
 def _grid_id(lat, lon):
-    return ((lon + 0.00416666666666667) * 120) << 16 | \
-        ((lat+ 0.00416666666666667) * 120) & 65535
+    return (int(math.floor(lon * 120.0)) << 16) | \
+           (int(math.floor(lat * 120.0)) & 65535)
+
+#    return int((lon + 0.00416666666666667) * 120) << 16 | \
+#        int((lat+ 0.00416666666666667) * 120) & 65535
 
 def _extract_data(urban, pop, validator, startx=0, starty=0):
     """
@@ -269,8 +273,19 @@ def main():
     # After loading data, check the validate cell counts
     validator.validate(_startx)
 
+def _test_grid_id():
+	print 0,0,_grid_id(0,0)
+	print 45,9,_grid_id(45,9)
+	print 180,90,_grid_id(180,90)
+	print 180,-90,_grid_id(180,-90)
+	print -180,-90,_grid_id(-180,-90)
+	print -180,90,_grid_id(-180,90)
+
 #
 # Main driver
 #
 if __name__ == "__main__":
     main()
+	#_test_grid_id()
+
+
