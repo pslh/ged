@@ -274,12 +274,13 @@ def main():
     validator.validate(_startx)
 
 def _test_grid_id():
-	print 0,0,_grid_id(0,0)
-	print 45,9,_grid_id(45,9)
-	print 180,90,_grid_id(180,90)
-	print 180,-90,_grid_id(180,-90)
-	print -180,-90,_grid_id(-180,-90)
-	print -180,90,_grid_id(-180,90)
+	# TODO turn this into a real test case
+	print 0,0,_grid_id(0,0)			# expecting 0 
+	print 45,9,_grid_id(45,9)		#   70784280
+	print 180,90,_grid_id(180,90)		#  707810400
+	print 180,-90,_grid_id(180,-90)		# -707767200
+	print -180,-90,_grid_id(-180,-90)	# -707744864
+	print -180,90,_grid_id(-180,90)		#  707832736
 
 #
 # Main driver
