@@ -53,7 +53,7 @@ function ingest_files() {
 		LOG_FILE="logs/$BN.log"
 	
 		#
-		# Check for known material string with semi-colon
+		# Check for known material string containing semi-colon
 		#
 		RV=$(grep "Mixed material: part wood;" "$DAT_FILE")
 		if [ "$RV" = "" ]
@@ -61,7 +61,7 @@ function ingest_files() {
 			# No bad material
 			$INGESTER "$DAT_FILE" $INGEST_ARGS > "$LOG_FILE"
 		else
-			# Use sed to fix bad material
+			# Use sed to replace ';' in material field with a ','
 			echo "$THIS_NAME: replacing bad material field in $DAT_FILE"
 			sed -e 's/Mixed material: part wood;/Mixed material: part wood,/' \
 				"$DAT_FILE" > "$TMP_FILE"
