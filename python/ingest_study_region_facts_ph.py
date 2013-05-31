@@ -13,28 +13,45 @@ sys.path.append('libs/xlrd-0.8.0')
 sys.path.append('libs/xlutils-1.5.2')
 sys.path.append('libs/xlwt-0.7.4')
 from xlrd import open_workbook
-      
-def study_region_facts(connection,mark,distribution_group_id,factsxls,nameOfTheCountry,area,arrayExcel,log,schema):
+
+#
+#     study_region_facts_id = study_region_facts(connection,mark,
+#                                               distribution_group_id,factsxls,
+#                                               nameOfTheCountry,is_urban,
+#                                               arrayExcel,log,schema)
+
+#
+
+def study_region_facts(connection,mark,distribution_group_id,
+                       factsxls,nameOfTheCountry,is_urban,arrayExcel,log,schema):
     found = False
+    
     for i in arrayExcel:
         if (i[0].strip() == nameOfTheCountry.strip()):
             name = i[0]
             urban = i[1]
             rural = i[2]
             source = i[3]
-            data = i[4]
-            data = str(int(data)) + "-01-01" 
+            date = i[4]
+            date = str(int(date)) + "-01-01" 
 
-            avg_peop_dwelling = ""
-            if (area == 't'):
-                area = 'true'
+            avg_peop_dwelling = None
+            if (is_urban):
                 avg_peop_dwelling = urban
             else:
-                area = 'false'
                 avg_peop_dwelling = rural
             
+            sys.stderr.write(" PH: {0} u={1} r={2} is={3} avg={4} dgid={5}\n".
+                             format(name, urban, rural, is_urban, 
+                                    avg_peop_dwelling,is_urban,
+                                    distribution_group_id));
             
-            selectQuery="SELECT distribution_group_id, avg_peop_dwelling, avg_peop_dwelling_source  FROM " + schema + ".study_region_facts where distribution_group_id =" + str(distribution_group_id);
+            selectQuery="""
+                SELECT distribution_group_id, avg_peop_dwelling, 
+                    avg_peop_dwelling_source 
+                  FROM {0}.study_region_facts 
+                 WHERE distribution_group_id ={1}
+                 """.format(schema,distribution_group_id);
             mark.execute(selectQuery)
             results = mark.fetchone()
             if (results):
@@ -43,19 +60,16 @@ def study_region_facts(connection,mark,distribution_group_id,factsxls,nameOfTheC
             else:
                 print "I will insert ", nameOfTheCountry, distribution_group_id, avg_peop_dwelling, source
                 if (avg_peop_dwelling):
-                    insertQuery = """INSERT INTO """ + schema +""".study_region_facts(
+                    insertQuery = """
+                    INSERT INTO {0}.study_region_facts(
                         distribution_group_id, 
                         avg_peop_dwelling, 
                         avg_peop_dwelling_source,
                         avg_peop_building_date
-                    )
-                    VALUES (
-                        """+str(distribution_group_id)+""", 
-                        """+str(avg_peop_dwelling)+""", 
-                        '"""+str(source)+"""',
-                        '"""+str(data)+"""'
-
-                    );"""
+                        )
+                    VALUES ({1},{2},{3},'{4}');
+                    """.format(schema,distribution_group_id, 
+                                 avg_peop_dwelling, avg_peop_dwelling,date)
                     
                     print insertQuery
                     mark.execute(insertQuery)
@@ -68,21 +82,6 @@ def study_region_facts(connection,mark,distribution_group_id,factsxls,nameOfTheC
         
     if not(found):
         log.append(nameOfTheCountry)
-
-
-
-    ##read nameOfTheCountry
-    ##select area + nameOfTheCountry
-    #SELECT id, distribution_group_id, tot_num_dwellings, tot_num_dwellings_source, 
-    #   tot_num_dwellings_source_date, tot_num_buildings, tot_num_buildings_source, 
-    #   tot_num_buildings_source_date, avg_peop_dwelling, avg_peop_dwelling_source, 
-    #   avg_peop_dwelling_source_date, avg_peop_building, avg_peop_building_source, 
-    #   avg_peop_building_source_date, avg_floor_capita, avg_floor_capita_source, 
-    #   avg_floor_capita_source_date, avg_dwelling_area, avg_dwelling_area_source, 
-    #   avg_dwelling_area_source_date
-    #FROM ged2test.study_region_facts;
-
-
 
 homepath = os.getenv("HOME")
 localparamfile = homepath + "/.param_calc"
@@ -101,7 +100,8 @@ else:
     passwd = getpass.getpass("passwd:%s:" % usr)
 
     
-conString="dbname=ged user="+ usr +" password="+ passwd + " host="+ database + " port=" + port
+conString="dbname=ged user="+ usr +" password="+ passwd + " host="+ \
+    database + " port=" + port
 connection = psycopg2.connect(conString)
 
 mark = connection.cursor()    
@@ -123,14 +123,14 @@ for s in excel.sheets():
         name = (s.cell(row,2).value)
         urban = (s.cell(row,3).value)
         rural = (s.cell(row,4).value)
-        data = (s.cell(row,5).value)
+        date = (s.cell(row,5).value)
         source = (s.cell(row,6).value)
         #add data
             #roof = (s.cell(0,col).value)
         if (name):
             print name,urban,rural,source
             
-            arrayExcel.append([name,urban,rural,source,data])
+            arrayExcel.append([name,urban,rural,source,date])
 
 
 #
@@ -138,19 +138,21 @@ for s in excel.sheets():
 # TODO make sure we add correct value for urban/rural - currently NOT distinguishing
 #
 selectQuery = """
-    select country_name, distribution_group_id,distribution_is_urban,study_region_facts_id from (
-SELECT ged2.gadm_country.name as country_name, 
-    ged2.distribution_group.id as distribution_group_id ,
-    ged2.distribution_group.is_urban as distribution_is_urban,
-    ged2.study_region_facts.id as study_region_facts_id
-FROM ged2.distribution_group
-join ged2.study_region on ged2.study_region.id = ged2.distribution_group.study_region_id
-join ged2.geographic_region on ged2.geographic_region.id = ged2.study_region.geographic_region_id
-join ged2.gadm_country on ged2.gadm_country.id = ged2.geographic_region.gadm_country_id
-left join ged2.study_region_facts on ged2.study_region_facts.distribution_group_id = ged2.distribution_group.id
-) as foo
-where study_region_facts_id is null
-order by country_name,distribution_is_urban
+SELECT  country.name AS country_name, 
+        dg.id AS distribution_group_id ,
+        dg.is_urban AS distribution_is_urban,
+        facts.id AS study_region_facts_id
+    FROM ged2.distribution_group AS dg
+    JOIN ged2.study_region AS sr
+      ON sr.id = dg.study_region_id
+    JOIN ged2.geographic_region AS region
+      ON region.id = sr.geographic_region_id
+    JOIN ged2.gadm_country AS country
+      ON country.id = region.gadm_country_id
+    LEFT JOIN ged2.study_region_facts AS facts
+      ON facts.distribution_group_id = dg.id
+WHERE dg.occupancy_id=0 AND facts.id IS NULL
+ORDER BY country.name, dg.is_urban
 """
 mark.execute(selectQuery)
 results = mark.fetchall()
@@ -158,8 +160,16 @@ results = mark.fetchall()
 for record in results:
     nameOfTheCountry = record[0]
     distribution_group_id = record[1]
-    area = record[2]
-    study_region_facts_id = study_region_facts(connection,mark,distribution_group_id,factsxls,nameOfTheCountry,area,arrayExcel,log,schema)
+    is_urban = record[2]
+    sys.stderr.write(" PH1: {0} is={1} dgid={2}\n".
+                     format(nameOfTheCountry,
+                            is_urban,distribution_group_id));
+
+    
+    study_region_facts_id = study_region_facts(connection,mark,
+                                               distribution_group_id,factsxls,
+                                               nameOfTheCountry,is_urban,
+                                               arrayExcel,log,schema)
 
 log = list(set(log))
 mark.close()
@@ -168,18 +178,4 @@ connection.close()
 print log
         
 #python ingest_study_region_facts.py GED4GEM_Country_average_dwelling_size_23apr13.xls ged2test
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         
