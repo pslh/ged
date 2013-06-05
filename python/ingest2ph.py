@@ -345,9 +345,6 @@ else:
     usr=raw_input("Enter Your User: ")
     passwd = getpass.getpass("passwd:%s:" % usr)
 
-    
-#conString="dbname=ged user=stefano password="+ passwd + " host="+ database + " port=" + port
-
 conString="dbname=ged user="+usr+" password="+ passwd + " host="+ database + " port=" + port
 connection = psycopg2.connect(conString)
 
