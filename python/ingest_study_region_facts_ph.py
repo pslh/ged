@@ -65,11 +65,11 @@ def study_region_facts(connection,mark,distribution_group_id,
                         distribution_group_id, 
                         avg_peop_dwelling, 
                         avg_peop_dwelling_source,
-                        avg_peop_building_date
+                        avg_peop_dwelling_date
                         )
-                    VALUES ({1},{2},{3},'{4}');
+                    VALUES ({1},{2},'{3}','{4}');
                     """.format(schema,distribution_group_id, 
-                                 avg_peop_dwelling, avg_peop_dwelling,date)
+                                 avg_peop_dwelling, source,date)
                     
                     print insertQuery
                     mark.execute(insertQuery)
