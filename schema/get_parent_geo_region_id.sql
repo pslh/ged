@@ -42,7 +42,7 @@ BEGIN
 	  THEN
 		-- already a country, no parent 
 		-- raise EXCEPTION? return geo_region_id?
-		RETURN NULL;
+		RETURN geo_region_id;
 
 	  WHEN rec.gadm_admin_3_id IS NOT NULL
 	  THEN
