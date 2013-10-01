@@ -1,19 +1,26 @@
-SELECT DISTINCT ON (iso, id_0) id_0 AS id, iso, name_0 AS name INTO ged2.gadm_country FROM ged2.gadm2 ORDER BY id_0;
-ALTER TABLE ged2.gadm_country ADD PRIMARY KEY (id);
-ALTER TABLE ged2.gadm_country set tablespace ged2_ts
+--
+-- Create ged2.gadm_* tables from ged2.gadm2
+--
 
-(
-	id INTEGER PRIMARY KEY, 
-	name VARCHAR NOT NULL, 
-	varname VARCHAR NOT NULL,
-	nl_name VARCHAR ,
-	nl_type VARCHAR,
-	engtype VARCHAR,
-	gadm_id_1 INTEGER NOT NULL,
-	gadm_country_id INTEGER NOT NULL)  
-
+--
+-- Remove existing tables
+--
+DROP TABLE IF EXISTS ged2.gadm_admin_3;
 DROP TABLE IF EXISTS ged2.gadm_admin_2;
 DROP TABLE IF EXISTS ged2.gadm_admin_1;
+DROP TABLE IF EXISTS ged2.gadm_country;
+
+--
+-- Create ged2.gadm_country table from distinct nations in gadm2
+-- Add primary key and set tablespace
+--
+SELECT DISTINCT ON (iso, id_0) id_0 AS id, iso, name_0 AS name INTO ged2.gadm_country FROM ged2.gadm2 ORDER BY id_0;
+ALTER TABLE ged2.gadm_country ADD PRIMARY KEY (id);
+ALTER TABLE ged2.gadm_country set tablespace ged2_ts;
+
+--
+-- Create gadm_admin_1 from distinct regions in gadm2
+--
 CREATE TABLE ged2.gadm_admin_1 
 TABLESPACE ged2_ts
 AS 
@@ -36,6 +43,9 @@ ALTER TABLE ged2.gadm_admin_1 ADD CONSTRAINT gadm_country_id_fk FOREIGN KEY (gad
 ALTER TABLE ged2.gadm_admin_1 ALTER COLUMN gadm_country_id SET NOT NULL;
 ALTER TABLE ged2.gadm_admin_1 ALTER COLUMN name SET NOT NULL;
 
+--
+-- Create gadm_admin_2 in same way
+--
 CREATE TABLE ged2.gadm_admin_2 
 TABLESPACE ged2_ts
 AS 
@@ -65,7 +75,9 @@ ALTER TABLE ged2.gadm_admin_2 ALTER COLUMN gadm_id_1 SET NOT NULL;
 ALTER TABLE ged2.gadm_admin_2 ALTER COLUMN gadm_id_2 SET NOT NULL;
 ALTER TABLE ged2.gadm_admin_2 ALTER COLUMN name SET NOT NULL;
 
-
+--
+-- Create gadm_admin_3 in same way
+--
 CREATE TABLE ged2.gadm_admin_3 
 TABLESPACE ged2_ts
 AS 
@@ -96,5 +108,3 @@ ALTER TABLE ged2.gadm_admin_3 ALTER COLUMN gadm_id_1 SET NOT NULL;
 ALTER TABLE ged2.gadm_admin_3 ALTER COLUMN gadm_id_2 SET NOT NULL;
 ALTER TABLE ged2.gadm_admin_3 ALTER COLUMN gadm_id_3 SET NOT NULL;
 ALTER TABLE ged2.gadm_admin_3 ALTER COLUMN name SET NOT NULL;
---
-select g1.id AS gadm_admin_1_id,g2.*  FROM ged2.gadm_admin_2 g2 JOIN ged2.gadm_admin_1 g1 ON g2.gadm_id_1=g1.gadm_id_1 AND g2.gadm_country_id=g1.gadm_country_id
