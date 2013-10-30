@@ -3,7 +3,8 @@
 -- geographic_region_id of a GADM 2 region
 --
 DROP FUNCTION IF EXISTS paul.get_parent_geo_region_id_g2(geo_region_id integer);
-CREATE OR REPLACE FUNCTION paul.get_parent_geo_region_id_g2(
+DROP FUNCTION IF EXISTS ged2.get_parent_geo_region_id_g2(geo_region_id integer);
+CREATE OR REPLACE FUNCTION ged2.get_parent_geo_region_id_g2(
 	geo_region_id integer)
   RETURNS integer AS
 $BODY$

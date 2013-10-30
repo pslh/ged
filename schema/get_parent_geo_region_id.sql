@@ -3,7 +3,8 @@
 -- geographic_region_id of a GADM 2 region
 --
 DROP FUNCTION IF EXISTS paul.get_parent_geo_region_id(geo_region_id integer);
-CREATE OR REPLACE FUNCTION paul.get_parent_geo_region_id(
+DROP FUNCTION IF EXISTS ged2.get_parent_geo_region_id(geo_region_id integer);
+CREATE OR REPLACE FUNCTION ged2.get_parent_geo_region_id(
 	geo_region_id integer)
   RETURNS integer AS
 $BODY$
@@ -21,7 +22,7 @@ BEGIN
 	if rec IS NULL
 	THEN
 		RAISE EXCEPTION
-			'paul.get_parent_geo_region_id(%): region not found', 
+			'ged2.get_parent_geo_region_id(%): region not found', 
 			geo_region_id;
 	END IF;
 
@@ -29,13 +30,13 @@ BEGIN
 	  WHEN rec.gadm_admin_2_id IS NOT NULL
 	  THEN
 		SELECT INTO parent_gr_id 
-			paul.get_parent_geo_region_id_g2(geo_region_id);
+			ged2.get_parent_geo_region_id_g2(geo_region_id);
 		RETURN parent_gr_id;
 
 	  WHEN rec.gadm_admin_1_id IS NOT NULL
 	  THEN
 		SELECT INTO parent_gr_id 
-			paul.get_parent_geo_region_id_g1(geo_region_id);
+			ged2.get_parent_geo_region_id_g1(geo_region_id);
 		RETURN parent_gr_id;
 
 	  WHEN rec.gadm_country_id IS NOT NULL
@@ -49,7 +50,7 @@ BEGIN
 		-- There is no admin 3 data available, so I could write
 		-- but not test a suitable function
 		RAISE EXCEPTION 
-			'paul.get_parent_geo_region_id(%): %',
+			'ged2.get_parent_geo_region_id(%): %',
 			geo_region_id,
 			'no support for finding parents of admin 3 regions.';
 	  
@@ -58,7 +59,7 @@ BEGIN
 		-- It is not at all clear what the parent of a custom region
 		-- might be
 		RAISE EXCEPTION 
-			'paul.get_parent_geo_region_id(%): %',
+			'ged2.get_parent_geo_region_id(%): %',
 			geo_region_id,
 			'no support for finding parents of custom regions.';
 
@@ -66,7 +67,7 @@ BEGIN
 		-- This should not happen and may indicate that the schema
 		-- has changed or the DB is corrupt
 		RAISE EXCEPTION 
-			'paul.get_parent_geo_region_id(%): %',
+			'ged2.get_parent_geo_region_id(%): %',
 			geo_region_id,
 			'SERIOUS ERROR - no region id found';
 		
