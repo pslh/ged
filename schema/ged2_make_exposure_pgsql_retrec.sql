@@ -25,12 +25,12 @@ CREATE TYPE ged2.exposure_t AS (
 	occ_type INTEGER, 
 	is_urban BOOLEAN,
 	
-	dwelling_fraction float;
-	bldg_fraction float;
-	type_pop float;
-	day_pop float;
-	night_pop float;
-	transit_pop float;
+	dwelling_fraction float,
+	bldg_fraction float,
+	type_pop float,
+	day_pop float,
+	night_pop float,
+	transit_pop float,
   
  	bldg_count float,
 	bldg_count_quality integer,
@@ -71,8 +71,8 @@ BEGIN
 	IF (tot_pop IS NULL OR tot_pop = 0) 
 	THEN
 		RAISE EXCEPTION 'Total population may not be NULL OR 0' 
-			USING HINT 'Please check definition of study region';
-	END IF
+			USING HINT = 'Please check definition of study region';
+	END IF;
 	
 	--
 	-- TODO consider removing values which are simply copied from inputs
@@ -154,7 +154,7 @@ BEGIN
       	
    	-- method 2 
 	ELSIF (	study_region_facts.avg_peop_dwelling IS NOT NULL AND		
-       		dist_values.avg_dwelling_per_build IS NOT NUL) 
+       		dist_values.avg_dwelling_per_build IS NOT NULL) 
     THEN
       	_dwellings_count = (pop_value * return_value.dwelling_fraction) / 
       		study_region_facts.avg_peop_dwelling;
