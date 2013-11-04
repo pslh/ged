@@ -172,31 +172,21 @@ BEGIN
       bldg_cost_quality = 0;
    end if;
 
-   -- raise notice '% % % % % %', bldg_count, bldg_count_quality, bldg_area, bldg_area_quality, bldg_cost, bldg_cost_quality;
-   -- build output string
-   --return grid_id || ',' || lon || ',' || lat || ',"' || bldg_type || '","' || occ_type || '",' || is_urban || ',' || dwelling_fraction || ',' || bldg_fraction || ',' 
-    --    || type_pop || ',' || day_pop || ',' || night_pop || ',' || transit_pop || ',' 
-     --   || bldg_count || ',' || bldg_count_quality || ',' || bldg_area || ',' || bldg_area_quality || ',' || bldg_cost  || ',' || bldg_cost_quality;
-
-
     --
     -- Use CONCAT rather than || since some of the values may
     -- be NULL and 
     --   x || NULL == NULL  for any x
     --
     RETURN CONCAT(
-	grid_id , ',' , lon , ',' , lat , ',"' , 
-	bldg_type , '",' , occ_type , ',' , is_urban , ',' , 
-	dwelling_fraction , ',' , bldg_fraction , ',' , 
-	type_pop , ',' , day_pop , ',' , night_pop , ',' , transit_pop , ',' , 
-	bldg_count , ',' , bldg_count_quality , ',' , 
-	bldg_area , ',' , bldg_area_quality , ',' , 
-	bldg_cost  , ',' , bldg_cost_quality
+		grid_id , ',' , lon , ',' , lat , ',"' , 
+		bldg_type , '",' , occ_type , ',' , is_urban , ',' , 
+		dwelling_fraction , ',' , bldg_fraction , ',' , 
+		type_pop , ',' , day_pop , ',' , night_pop , ',' , transit_pop , ',' , 
+		bldg_count , ',' , bldg_count_quality , ',' , 
+		bldg_area , ',' , bldg_area_quality , ',' , 
+		bldg_cost  , ',' , bldg_cost_quality
     );
 
---   outstring = grid_id || ',' || lon || ',' || lat || ',"' || bldg_type || '","' || occ_type || '",' || is_urban || ',' || dwelling_fraction || ',' || bldg_fraction || ',' 
- --       || type_pop || ',' || day_pop || ',' || night_pop || ',' || transit_pop || ',' 
-  --      || bldg_count || ',' || bldg_count_quality || ',' || bldg_area || ',' || bldg_area_quality || ',' || bldg_cost  || ',' || bldg_cost_quality;
 END;
 $BODY$
   LANGUAGE plpgsql VOLATILE
