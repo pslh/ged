@@ -77,8 +77,12 @@ BEGIN
 	--
 	-- TODO consider removing values which are simply copied from inputs
 	--
+	return_value.grid_id = grid_id;
+	return_value.lat = lat;
+	return_value.lon = lon;
 	return_value.bldg_type = dist_values.building_type;
 	return_value.occ_type = pop_alloc.occupancy_id;
+	return_value.is_urban = is_urban;
 	return_value.dwelling_fraction = dist_values.dwelling_fraction;
    
 	-- population used to calculate building count
