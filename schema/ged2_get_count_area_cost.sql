@@ -16,8 +16,8 @@ DROP TYPE IF EXISTS ged2.exposure_t;
 --
 CREATE TYPE ged2.exposure_t AS (
 	grid_id INTEGER,
-	lat double precision, 
 	lon double precision,
+	lat double precision, 
 	bldg_type VARCHAR,
 	occ_type INTEGER, 
 	is_urban BOOLEAN,

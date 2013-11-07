@@ -12,7 +12,7 @@ DECLARE
 	geo_region_id	INTEGER;
 	
 	return_value ged2.exposure_t;
-	
+	ret_rec RECORD;
 BEGIN
 	-- entry function to generate output CSV file for a given study region  
 	-- version 0.2
@@ -83,14 +83,16 @@ BEGIN
 		-- return QUERY select ged2.make_exposure_pgsql(
 --		return QUERY select ged2.get_count_area_cost(
 
-		return_value = ged2.get_count_area_cost(
+		FOR ret_rec IN 
+		 SELECT --ged2.get_count_area_cost(
 				g.grid_point_id, g.lat, g.lon, 
 				g.is_urban, g.pop_value, 
 				pop_summary.total_population,
 				intermediate.ms_sum_fraction_over_dwellings,
-				pa.*,	-- pop_allocation
-				sf.*::ged2.study_region_facts, 	-- study_region_facts
-				dv.*::ged2.distribution_value)	-- dist_values				
+				(pa) AS rpa,	-- pop_allocation
+				(sf) AS rsf, 	-- study_region_facts
+				(dv) AS rdv
+				--)	-- dist_values				
 			FROM tmp_grid_points g 			
 			INNER JOIN ged2.pop_allocation pa 
 			  ON g.is_urban=pa.is_urban AND 
@@ -114,8 +116,24 @@ BEGIN
 				  	distribution_record.distribution_group_id
 				group by distribution_group_id) intermediate 
 			ON intermediate.distribution_group_id = 
-				distribution_record.distribution_group_id;
-		return NEXT return_value;
+				distribution_record.distribution_group_id
+		LOOP
+			RAISE NOTICE '@@@ Hello Paul: ged2.build_study_region_retrec: rec= %', ret_rec;
+			return_value=ged2.get_count_area_cost(
+				ret_rec.grid_point_id, ret_rec.lat, ret_rec.lon, 
+				ret_rec.is_urban, ret_rec.pop_value, 
+				ret_rec.total_population,
+				ret_rec.ms_sum_fraction_over_dwellings,
+				ret_rec.rpa,	-- pop_allocation
+				ret_rec.rsf::ged2.study_region_facts, 	-- study_region_facts
+				ret_rec.rdv::ged2.distribution_value
+
+			);
+			RAISE NOTICE '@@@ Hello Paul: ged2.build_study_region_retrec: returning %', return_value;
+			RETURN NEXT return_value;
+		END LOOP;
+		--RAISE NOTICE 'ged2.build_study_region_retrec: returning %', return_value;
+		--return NEXT return_value;
 	END LOOP;
 	-- running the script
 	-- copy (select ged2.build_study_region(252)) to '/home/zhu/population_scripts/output.csv';

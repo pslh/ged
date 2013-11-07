@@ -23,12 +23,6 @@ DECLARE
 	
 	_total_bldgs  float;
 BEGIN	
-	RAISE NOTICE '!! Hello Paul: ged2.get_building_count(%, %, %, %, %) START',
-		pop_value, tot_pop, ms_sum_fraction_over_dwellings, 
-		study_region_facts, dist_values
-	;
-
-	
 	--
    	-- Calculate building count using one of the five methods described in
    	-- UNIPV_USGS_revised_procedure_1.5.doc
