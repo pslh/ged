@@ -4,12 +4,14 @@ DROP FUNCTION IF EXISTS ged2.build_study_region_retrec(numeric);
 
 CREATE OR REPLACE FUNCTION ged2.build_study_region_retrec(
 	in_study_region_id numeric)
-  RETURNS SETOF text AS
+  RETURNS SETOF ged2.exposure_t AS
 $BODY$
 DECLARE  
 	distribution_record RECORD;
 	pop_summary RECORD;	
 	geo_region_id	INTEGER;
+	
+	return_value ged2.exposure_t;
 	
 BEGIN
 	-- entry function to generate output CSV file for a given study region  
@@ -78,10 +80,10 @@ BEGIN
 -- 		select * from ged2.distribution_value 
 -- 		    where distribution_group_id= distribution_record.distribution_group_id;
 	
-
-	
 		-- return QUERY select ged2.make_exposure_pgsql(
-		return QUERY select ged2.make_exposure_pgsql_retrec(
+--		return QUERY select ged2.get_count_area_cost(
+
+		return_value = ged2.get_count_area_cost(
 				g.grid_point_id, g.lat, g.lon, 
 				g.is_urban, g.pop_value, 
 				pop_summary.total_population,
@@ -89,14 +91,31 @@ BEGIN
 				pa.*,	-- pop_allocation
 				sf.*::ged2.study_region_facts, 	-- study_region_facts
 				dv.*::ged2.distribution_value)	-- dist_values				
-			from tmp_grid_points g 			
-			inner join ged2.pop_allocation pa on g.is_urban=pa.is_urban and pa.geographic_region_id=geo_region_id and pa.is_urban=distribution_record.is_urban and pa.occupancy_id = distribution_record.occupancy_id
-			left join ged2.study_region_facts sf on sf.distribution_group_id=distribution_record.distribution_group_id
-			left join ged2.distribution_value dv on dv.distribution_group_id=distribution_record.distribution_group_id
-			inner join 
-				(select distribution_group_id, sum( case when avg_dwelling_per_build > 0 then dwelling_fraction / avg_dwelling_per_build else 0 end ) ms_sum_fraction_over_dwellings
-				from ged2.distribution_value where distribution_group_id = distribution_record.distribution_group_id
-				group by distribution_group_id) intermediate on intermediate.distribution_group_id = distribution_record.distribution_group_id;
+			FROM tmp_grid_points g 			
+			INNER JOIN ged2.pop_allocation pa 
+			  ON g.is_urban=pa.is_urban AND 
+			  	 pa.geographic_region_id=geo_region_id AND 
+			  	 pa.is_urban=distribution_record.is_urban AND 
+			  	 pa.occupancy_id = distribution_record.occupancy_id
+			LEFT JOIN ged2.study_region_facts sf ON 
+				 sf.distribution_group_id=
+				 	distribution_record.distribution_group_id
+			LEFT JOIN ged2.distribution_value dv ON 
+				  dv.distribution_group_id=
+				  	distribution_record.distribution_group_id
+			INNER JOIN 
+				(select distribution_group_id, sum( 
+					case when avg_dwelling_per_build > 0 
+						then dwelling_fraction / avg_dwelling_per_build 
+						else 0 
+					 end ) ms_sum_fraction_over_dwellings
+				   from ged2.distribution_value 
+				  where distribution_group_id = 
+				  	distribution_record.distribution_group_id
+				group by distribution_group_id) intermediate 
+			ON intermediate.distribution_group_id = 
+				distribution_record.distribution_group_id;
+		return NEXT return_value;
 	END LOOP;
 	-- running the script
 	-- copy (select ged2.build_study_region(252)) to '/home/zhu/population_scripts/output.csv';

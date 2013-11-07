@@ -2,11 +2,6 @@
 -- Function: ged2.make_exposure_pgsql(bigint, double precision, double precision, boolean, double precision, double precision, double precision, ged2.pop_allocation, ged2.study_region_facts, ged2.distribution_value)
 
 DROP FUNCTION IF EXISTS ged2.make_exposure_pgsql_retrec(
-	bigint, double precision, double precision, boolean, 
-	double precision, double precision, double precision, 
-	ged2.pop_allocation, ged2.study_region_facts, ged2.distribution_value);
-
-DROP FUNCTION IF EXISTS ged2.make_exposure_pgsql_retrec(
 	integer, double precision, double precision, boolean, 
 	double precision, double precision, double precision, 
 	ged2.pop_allocation, ged2.study_region_facts, ged2.distribution_value);
@@ -53,7 +48,7 @@ CREATE OR REPLACE FUNCTION ged2.make_exposure_pgsql_retrec(
 	pop_alloc ged2.pop_allocation, 
 	study_region_facts ged2.study_region_facts, 
 	dist_values ged2.distribution_value)
-  RETURNS text AS
+  RETURNS ged2.exposure_t AS
 $BODY$
 DECLARE
 	return_value ged2.exposure_t;
