@@ -148,7 +148,7 @@ BEGIN
       	return_value.bldg_cost_quality = 0;
    	END IF;
 
-	RAISE NOTICE '!! Hello Paul: ged2.get_count_area_cost(%) returning %', grid_id, return_value;
+	-- RAISE NOTICE '!! Hello Paul: ged2.get_count_area_cost(%) returning %', grid_id, return_value;
 
    	
 	RETURN return_value; 

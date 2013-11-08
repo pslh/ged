@@ -103,8 +103,8 @@ BEGIN
 		RETURN NULL;
    	END IF;
    
-   	RAISE NOTICE '!! Hello Paul: ged2.get_building_count: RETURNING %',
-		return_value;
+   	--RAISE NOTICE '!! Hello Paul: ged2.get_building_count: RETURNING %',
+	--	return_value;
    	
    	RETURN return_value; 
 END;

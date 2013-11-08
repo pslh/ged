@@ -91,8 +91,8 @@ BEGIN
 				intermediate.ms_sum_fraction_over_dwellings,
 				(pa) AS rpa,	-- pop_allocation
 				(sf) AS rsf, 	-- study_region_facts
-				(dv) AS rdv
-				--)	-- dist_values				
+				(dv) AS rdv		-- dist_values
+				--)				
 			FROM tmp_grid_points g 			
 			INNER JOIN ged2.pop_allocation pa 
 			  ON g.is_urban=pa.is_urban AND 
@@ -118,7 +118,7 @@ BEGIN
 			ON intermediate.distribution_group_id = 
 				distribution_record.distribution_group_id
 		LOOP
-			RAISE NOTICE '@@@ Hello Paul: ged2.build_study_region_retrec: rec= %', ret_rec;
+			-- RAISE NOTICE '@@@ Hello Paul: ged2.build_study_region_retrec: rec= %', ret_rec;
 			return_value=ged2.get_count_area_cost(
 				ret_rec.grid_point_id, ret_rec.lat, ret_rec.lon, 
 				ret_rec.is_urban, ret_rec.pop_value, 
@@ -129,7 +129,7 @@ BEGIN
 				ret_rec.rdv::ged2.distribution_value
 
 			);
-			RAISE NOTICE '@@@ Hello Paul: ged2.build_study_region_retrec: returning %', return_value;
+			-- RAISE NOTICE '@@@ Hello Paul: ged2.build_study_region_retrec: returning %', return_value;
 			RETURN NEXT return_value;
 		END LOOP;
 		--RAISE NOTICE 'ged2.build_study_region_retrec: returning %', return_value;

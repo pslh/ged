@@ -1,8 +1,10 @@
-DROP TYPE IF EXISTS ged2.bcount_t;
 
 --
--- Composite type for exposure data
+-- Composite type for building count with quality
+-- Depending on the algorithm used to calculate number of buildings, the 
+-- dwellings count and/or building fraction fields may also be set.  
 --
+DROP TYPE IF EXISTS ged2.bcount_t;
 CREATE TYPE ged2.bcount_t AS (
  	bldg_count float,
 	bldg_count_quality integer,
@@ -10,18 +12,17 @@ CREATE TYPE ged2.bcount_t AS (
 	bldg_fraction float
 );
 
+--
+-- Composite type for building area with quality
+--
 DROP TYPE IF EXISTS ged2.barea_t;
---
--- Composite type for exposure data
---
 CREATE TYPE ged2.barea_t AS (
 	bldg_area float,
 	bldg_area_quality integer
 );
 
 --
--- Calculate building count, and bldg_count_quality  
--- Depending on method used may also set dwellings_count
+-- Calculate building area and quality  
 --
 CREATE OR REPLACE FUNCTION ged2.get_building_area(
 	bcount ged2.bcount_t, 
