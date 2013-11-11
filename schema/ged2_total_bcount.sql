@@ -23,7 +23,7 @@ BEGIN
 		SUM(exp1.bldg_area) AS total_blgd_area
 	  FROM (
 		SELECT *
-		  FROM ged2.build_study_region_retrec(2361)
+		  FROM ged2.build_study_region_retrec(study_region_id)
 		) AS exp1
 	 GROUP BY exp1.grid_id;
 END;
