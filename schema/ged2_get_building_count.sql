@@ -65,7 +65,7 @@ BEGIN
 	THEN
       	return_value.dwellings_count = (pop_value / tot_pop) * 
       		study_region_facts.tot_num_dwellings * 
-      			return_value.dwelling_fraction;      
+      			dist_values.dwelling_fraction;      
       	return_value.bldg_count = return_value.dwellings_count / 
       		dist_values.avg_dwelling_per_build;      
       	return_value.bldg_count_quality = 3;
@@ -75,7 +75,7 @@ BEGIN
        		dist_values.avg_dwelling_per_build IS NOT NULL) 
     THEN
       	return_value.dwellings_count = (pop_value * 
-      		return_value.dwelling_fraction) / 
+      		dist_values.dwelling_fraction) / 
       		study_region_facts.avg_peop_dwelling;
       	return_value.bldg_count = return_value.dwellings_count / 
       		dist_values.avg_dwelling_per_build;
@@ -83,7 +83,7 @@ BEGIN
 
    	-- method 1
    	ELSIF (	study_region_facts.avg_peop_building IS NOT NULL AND		
-       		return_value.dwelling_fraction IS NOT NULL AND
+       		dist_values.dwelling_fraction IS NOT NULL AND
        		ms_sum_fraction_over_dwellings <> 0 ) 
 	THEN
       	_total_bldgs = pop_value / study_region_facts.avg_peop_building;
@@ -91,7 +91,7 @@ BEGIN
       	THEN
          	return_value.bldg_fraction = dist_values.building_fraction;
       	ELSE
-			return_value.bldg_fraction = (return_value.dwelling_fraction / 
+			return_value.bldg_fraction = (dist_values.dwelling_fraction / 
 				dist_values.avg_dwelling_per_build ) / 
 					ms_sum_fraction_over_dwellings; 
       	END IF;
