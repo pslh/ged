@@ -22,6 +22,8 @@ DROP FUNCTION IF EXISTS ged2.make_exposure_pgsql_retrec(
 	ged2.pop_allocation, ged2.study_region_facts, ged2.distribution_value);
 
 DROP FUNCTION IF EXISTS ged2.build_study_region_retrec(numeric);
+DROP FUNCTION IF EXISTS ged2.build_study_region_retrec(INTEGER, INTEGER);
+
 
 --DROP TYPE IF EXISTS ged2.barea_t;
 --DROP TYPE IF EXISTS ged2.bcount_t;
