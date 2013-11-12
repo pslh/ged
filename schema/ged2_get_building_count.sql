@@ -19,7 +19,7 @@ CREATE OR REPLACE FUNCTION ged2.get_building_count(
   RETURNS ged2.bcount_t AS
 $BODY$
 DECLARE
-	return_value	ged2.bcount_t%ROWTYPE;
+	return_value	ged2.bcount_t;
 	
 	_total_bldgs  float;
 BEGIN	
@@ -61,7 +61,7 @@ BEGIN
 
    	-- method 3
 	ELSIF (study_region_facts.tot_num_dwellings IS NOT NULL AND
-	       dist_values.avg_dwelling_per_build is not null) 
+	       dist_values.avg_dwelling_per_build IS NOT NULL) 
 	THEN
       	return_value.dwellings_count = (pop_value / tot_pop) * 
       		study_region_facts.tot_num_dwellings * 
@@ -99,7 +99,12 @@ BEGIN
       	return_value.bldg_count_quality = 1;
       	return_value.dwellings_count = NULL;
    	ELSE
-   		RAISE WARNING 'No suitable building count method found, returning NULL';
+   		RAISE WARNING 'No suitable building count method found, returning NULL % % % % %',
+   			pop_value , 
+			tot_pop , 
+			ms_sum_fraction_over_dwellings , 
+			study_region_facts , 
+			dist_values ;
 		RETURN NULL;
    	END IF;
    
