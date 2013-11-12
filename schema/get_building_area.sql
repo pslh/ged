@@ -56,10 +56,9 @@ BEGIN
       return_value.bldg_area = (pop_value * dist_values.dwelling_fraction) * 
       	study_region_facts.avg_floor_capita;
       return_value.bldg_area_quality = 1;
-
-   	-- error ?, set to 0
    	ELSE
-   		RAISE WARNING 'No building area method, setting area value to NULL';
+   		RAISE NOTICE 'No building area method, setting area value to NULL: % % % ',
+   			bcount, study_region_facts, dist_values;
       	return_value.bldg_area = NULL;
       	return_value.bldg_area_quality = 0;
    	END IF;
