@@ -57,8 +57,8 @@ BEGIN
       	study_region_facts.avg_floor_capita;
       return_value.bldg_area_quality = 1;
    	ELSE
-   		RAISE NOTICE 'No building area method, setting area value to NULL: % % % ',
-   			bcount, study_region_facts, dist_values;
+   		-- RAISE NOTICE 'No building area method, setting area value to NULL: % % % ',
+   		--	bcount, study_region_facts, dist_values;
       	return_value.bldg_area = NULL;
       	return_value.bldg_area_quality = 0;
    	END IF;
