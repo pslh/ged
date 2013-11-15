@@ -62,26 +62,18 @@ BEGIN
 				 WHERE gadm_admin_3_id = distribution_record.gadm_admin_3_id;
 		ELSIF distribution_record.gadm_admin_2_id IS NOT NULL 
 		THEN
-			RAISE NOTICE '** region % is admin 2: ', 
-				distribution_record.geographic_region_id;
 			SELECT ged2.get_parent_geo_region_id(
 					distribution_record.geographic_region_id) 
 			  INTO geo_region_id;
-			RAISE NOTICE '** Using parent pop_allocation region % : ', 
-				geo_region_id;
 			CREATE TEMPORARY TABLE tmp_grid_points AS 
 				SELECT id AS grid_point_id, is_urban, pop_value, 
 						ST_X(the_geom) AS lon, ST_Y(the_geom) AS lat 
 				  FROM ged2.grid_point 
 				 WHERE gadm_admin_2_id = distribution_record.gadm_admin_2_id;
 		ELSIF distribution_record.gadm_admin_1_id IS NOT NULL THEN
-			RAISE NOTICE '** region % is admin 1: ', 
-					distribution_record.geographic_region_id;
 			SELECT ged2.get_parent_geo_region_id(
 						distribution_record.geographic_region_id) 
 			  INTO geo_region_id;
-			RAISE NOTICE '** Using parent pop_allocation region % : ', 
-				geo_region_id;
 
 			CREATE TEMPORARY TABLE tmp_grid_points AS 
 				SELECT id AS grid_point_id, is_urban, pop_value, 
@@ -100,7 +92,7 @@ BEGIN
 		SELECT SUM(pop_value) AS total_population, COUNT(*) AS total_grid_count 
 		  FROM tmp_grid_points t 
 		  INTO pop_summary;
-		RAISE NOTICE 'grid_summary %', pop_summary;
+		-- RAISE NOTICE 'grid_summary %', pop_summary;
 		
 		--
 		-- 
