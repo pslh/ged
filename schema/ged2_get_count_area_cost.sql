@@ -52,13 +52,13 @@ CREATE OR REPLACE FUNCTION ged2.get_count_area_cost(
   RETURNS ged2.exposure_t AS
 $BODY$
 DECLARE
-	return_value ged2.exposure_t%ROWTYPE;
+	return_value ged2.exposure_t;
 
 	-- Temporary variables, names start with _
 	_total_bldgs  float;
 
-	_bcount	ged2.bcount_t%ROWTYPE;
-	_area ged2.barea_t%ROWTYPE;
+	_bcount	ged2.bcount_t;
+	_area ged2.barea_t;
 	
 	_genrec RECORD;
 BEGIN
@@ -143,7 +143,7 @@ BEGIN
       	return_value.bldg_cost_quality = return_value.bldg_area_quality;	
    	-- error ?, set to 0
    	ELSE
-		RAISE WARNING 'No building cost method, setting cost value to NULL';
+		-- RAISE NOTICE 'No building cost method, setting cost value to NULL';
       	return_value.bldg_cost = NULL;
       	return_value.bldg_cost_quality = 0;
    	END IF;
