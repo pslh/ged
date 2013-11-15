@@ -51,11 +51,11 @@ BEGIN
       	THEN
          	return_value.bldg_fraction = dist_values.building_fraction;
       	ELSE
-        	return_value.bldg_fraction = (return_value.dwelling_fraction / 
+        	return_value.bldg_fraction = (dist_values.dwelling_fraction / 
         		dist_values.avg_dwelling_per_build ) / 
         			ms_sum_fraction_over_dwellings; 
       	END IF;
-      	return_value.bldg_count = _total_bldgs * bldg_fraction;
+      	return_value.bldg_count = _total_bldgs * return_value.bldg_fraction;
       	return_value.bldg_count_quality = 4;
 		return_value.dwellings_count = NULL;
 
@@ -95,7 +95,7 @@ BEGIN
 				dist_values.avg_dwelling_per_build ) / 
 					ms_sum_fraction_over_dwellings; 
       	END IF;
-      	return_value.bldg_count = _total_bldgs * bldg_fraction;
+      	return_value.bldg_count = _total_bldgs * return_value.bldg_fraction;
       	return_value.bldg_count_quality = 1;
       	return_value.dwellings_count = NULL;
    	ELSE
