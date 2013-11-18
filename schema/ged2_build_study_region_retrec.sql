@@ -10,8 +10,7 @@ CREATE OR REPLACE FUNCTION ged2.build_study_region_retrec(
 $BODY$
 DECLARE  
 	distribution_record RECORD;
-	pop_summary RECORD;	
-	geo_region_id	INTEGER;
+	_geo_region_id	INTEGER;
 	
 	return_value ged2.exposure_t;
 	ret_rec RECORD;
@@ -40,65 +39,26 @@ BEGIN
 		WHERE r.id=in_study_region_id AND g.occupancy_id=in_occupancy_id
 	LOOP
 		-- load all grid points
-		drop table if exists tmp_grid_points;
 
-		geo_region_id := distribution_record.geographic_region_id;
-
-		IF distribution_record.custom_geography_id IS NOT NULL 
-		THEN
-			CREATE TEMPORARY TABLE tmp_grid_points AS 
-				SELECT id AS grid_point_id, is_urban, pop_value, 
-						ST_X(the_geom) AS lon, ST_Y(the_geom) AS lat 
-				  FROM ged2.grid_point p 
-				  INNER JOIN ged2.custom_geography g 
-				  ON contains(transform(g.the_geom, 4326), 
-				  			transform(p.the_geom, 4326));
-		ELSIF distribution_record.gadm_admin_3_id IS NOT NULL 
-		THEN
-		    CREATE TEMPORARY TABLE tmp_grid_points AS 
-				SELECT id AS grid_point_id, is_urban, pop_value, 
-					ST_X(the_geom) AS lon, ST_Y(the_geom) AS lat 
-				  FROM ged2.grid_point 
-				 WHERE gadm_admin_3_id = distribution_record.gadm_admin_3_id;
-		ELSIF distribution_record.gadm_admin_2_id IS NOT NULL 
-		THEN
-			SELECT ged2.get_parent_geo_region_id(
-					distribution_record.geographic_region_id) 
-			  INTO geo_region_id;
-			CREATE TEMPORARY TABLE tmp_grid_points AS 
-				SELECT id AS grid_point_id, is_urban, pop_value, 
-						ST_X(the_geom) AS lon, ST_Y(the_geom) AS lat 
-				  FROM ged2.grid_point 
-				 WHERE gadm_admin_2_id = distribution_record.gadm_admin_2_id;
-		ELSIF distribution_record.gadm_admin_1_id IS NOT NULL THEN
-			SELECT ged2.get_parent_geo_region_id(
-						distribution_record.geographic_region_id) 
-			  INTO geo_region_id;
-
-			CREATE TEMPORARY TABLE tmp_grid_points AS 
-				SELECT id AS grid_point_id, is_urban, pop_value, 
-						ST_X(the_geom) AS lon, ST_Y(the_geom) AS lat 
-				  FROM ged2.grid_point 
-				 WHERE gadm_admin_1_id = distribution_record.gadm_admin_1_id;
-		ELSE
-			CREATE TEMPORARY TABLE tmp_grid_points AS 
-				SELECT id AS grid_point_id, is_urban, pop_value, 
-					ST_X(the_geom) AS lon, ST_Y(the_geom) AS lat 
-			 FROM ged2.grid_point 
-			WHERE gadm_country_id = distribution_record.gadm_country_id;
-		END IF;
-
-		-- get total population count
-		SELECT SUM(pop_value) AS total_population, COUNT(*) AS total_grid_count 
-		  FROM tmp_grid_points t 
-		  INTO pop_summary;
-		-- RAISE NOTICE 'grid_summary %', pop_summary;
+		_geo_region_id := ged2.get_parent_geo_region_id(
+					distribution_record.geographic_region_id);
 		
-		--
-		-- 
-		--
-		FOR ret_rec IN 
-		 SELECT --ged2.get_count_area_cost(
+	  	FOR ret_rec IN 	
+	  		--
+	  		-- Use WITH statement rather than temporary table since this
+	  		-- permits use with read-only connections and STABLE type
+	  		--
+			WITH tmp_grid_points AS (
+				-- Obtain grid for specified region
+				SELECT * FROM ged2.get_region_grid(
+					distribution_record.study_region_id)
+			),
+			pop_summary AS (
+				-- Obtain total population count
+				SELECT SUM(pop_value) AS total_population, COUNT(*) AS total_grid_count
+					FROM tmp_grid_points t
+			)
+		 	SELECT -- ged2.get_count_area_cost(
 				g.grid_point_id, g.lat, g.lon, 
 				g.is_urban, g.pop_value, 
 				pop_summary.total_population,
@@ -106,11 +66,12 @@ BEGIN
 				(pa) AS rpa,	-- pop_allocation
 				(sf) AS rsf, 	-- study_region_facts
 				(dv) AS rdv		-- dist_values
-				--)				
-			FROM tmp_grid_points g 			
+				-- )				
+			FROM tmp_grid_points g
+			LEFT OUTER JOIN pop_summary ON TRUE
 			INNER JOIN ged2.pop_allocation pa 
 			  ON g.is_urban=pa.is_urban AND 
-			  	 pa.geographic_region_id=geo_region_id AND 
+			  	 pa.geographic_region_id=_geo_region_id AND 
 			  	 pa.is_urban=distribution_record.is_urban AND 
 			  	 pa.occupancy_id = distribution_record.occupancy_id
 			LEFT JOIN ged2.study_region_facts sf ON 
@@ -131,8 +92,11 @@ BEGIN
 				group by distribution_group_id) intermediate 
 			ON intermediate.distribution_group_id = 
 				distribution_record.distribution_group_id
+				
 		LOOP
-			-- RAISE NOTICE '@@@ Hello Paul: ged2.build_study_region_retrec: rec= %', ret_rec;
+			--
+			-- Return values in an exposure record
+			--		
 			return_value=ged2.get_count_area_cost(
 				ret_rec.grid_point_id, ret_rec.lat, ret_rec.lon, 
 				ret_rec.is_urban, ret_rec.pop_value, 
@@ -141,20 +105,13 @@ BEGIN
 				ret_rec.rpa,	-- pop_allocation
 				ret_rec.rsf::ged2.study_region_facts, 	-- study_region_facts
 				ret_rec.rdv::ged2.distribution_value
-
 			);
-			-- RAISE NOTICE '@@@ Hello Paul: ged2.build_study_region_retrec: returning %', return_value;
 			RETURN NEXT return_value;
 		END LOOP;
-		--RAISE NOTICE 'ged2.build_study_region_retrec: returning %', return_value;
-		--return NEXT return_value;
 	END LOOP;
-	-- running the script
-	-- copy (SELECT ged2.build_study_region(252)) to '/home/zhu/population_scripts/output.csv';
-	-- SELECT ged2.build_study_region(15) limit 10;
 END;
 $BODY$
-  LANGUAGE plpgsql VOLATILE
+  LANGUAGE plpgsql STABLE
   COST 100
   ROWS 1000;
 ALTER FUNCTION ged2.build_study_region_retrec(INTEGER, INTEGER)
