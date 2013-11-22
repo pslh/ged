@@ -58,9 +58,7 @@ AS
  SELECT 
  	    -- Unwrap bc record and join on grid to obtain geom et al
  		wrapped.sr_id, 
- 		(wrapped.bc).grid_id AS grid_id, 
- 		(wrapped.bc).bldg_count AS bldg_count, 
- 		(wrapped.bc).bldg_area AS bldg_area, 
+ 		(wrapped.bc).*,
  		grid.is_urban, 
  		grid.pop_value, 
  		grid.the_geom
@@ -74,6 +72,41 @@ AS
      ON grid.id = (wrapped.bc).grid_id
 ;
 ALTER TABLE ged2.all_nera_l0_studies
+  OWNER TO paul;
+  
+--
+DROP VIEW IF EXISTS ged2.all_nera_l1_studies;
+CREATE OR REPLACE VIEW ged2.all_nera_l1_studies 
+AS 
+ -- Obtain Study Regions in srs
+ WITH srs AS (
+ 	SELECT sr.id AS sr_id
+	  FROM ged2.study_region sr
+      JOIN ged2.study study 
+        ON study.id = sr.study_id
+	  JOIN ged2.geographic_region_gadm grg 
+	    ON grg.region_id = sr.geographic_region_id
+	 WHERE study.name LIKE '%, L1, NERA'
+	   AND grg.g1name IS NOT NULL  -- ONLY Level 1 studies
+	 ORDER BY sr.id
+ )
+ SELECT 
+ 	    -- Unwrap bc record and join on grid to obtain geom et al
+ 		wrapped.sr_id, 
+ 		(wrapped.bc).*,
+ 		grid.is_urban, 
+ 		grid.pop_value, 
+ 		grid.the_geom
+   FROM (
+   		-- Obtain totals for Study Region
+   		-- result is "wrapped" in bc record
+   		SELECT srs.sr_id, ged2.total_bldg_count_area(srs.sr_id) AS bc
+          FROM srs
+   ) AS wrapped
+   JOIN ged2.grid_point grid 
+     ON grid.id = (wrapped.bc).grid_id
+;
+ALTER TABLE ged2.all_nera_l1_studies
   OWNER TO paul;
   
 --
