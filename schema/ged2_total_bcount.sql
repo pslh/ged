@@ -5,6 +5,9 @@
 
 DROP VIEW IF EXISTS ged2.all_nera_l0_studies;
 DROP VIEW IF EXISTS ged2.all_hazus_studies;
+DROP VIEW IF EXISTS ged2.all_pager_l0_studies;
+DROP VIEW IF EXISTS ged2.all_unhabitat_l1_studies;
+DROP VIEW IF EXISTS ged2.all_unhabitat_l0_studies;
 
 DROP FUNCTION IF EXISTS ged2.total_bldg_count_area(INTEGER);
 
@@ -13,14 +16,16 @@ CREATE OR REPLACE FUNCTION ged2.total_bldg_count_area(study_region_id INTEGER)
   RETURNS TABLE(
   	grid_id INTEGER, 
   	bldg_count FLOAT, 
-  	bldg_area FLOAT) AS
+  	bldg_area FLOAT,
+  	bldg_cost FLOAT) AS
 $BODY$
 DECLARE
 BEGIN	
 	RETURN QUERY SELECT
 		exp1.grid_id,
 		SUM(exp1.bldg_count) AS bldg_count,
-		SUM(exp1.bldg_area) AS bldg_area
+		SUM(exp1.bldg_area) AS bldg_area,
+		SUM(exp1.bldg_cost) AS bldg_cost
 	  FROM (
 		SELECT *
 		  FROM ged2.build_study_region_retrec(study_region_id)
