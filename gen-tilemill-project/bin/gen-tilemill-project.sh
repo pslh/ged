@@ -83,10 +83,6 @@ then
 	echo "Usage: $0 <in dir> " >&2
 	exit 1;
 fi
-
-#
-#  
-#
 IN_DIR=$(readlink -f "$1")
 if [ ! -d "$IN_DIR" ]
 then
