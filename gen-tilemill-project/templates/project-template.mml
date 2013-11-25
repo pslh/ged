@@ -1,0 +1,15 @@
+    {
+      "geometry": "point",
+      "extent": [
+	@SHP_EXTENT@
+      ],
+      "id": "@SHP_FILE@",
+      "class": "",
+      "Datasource": {
+        "file": "@SHP_PATH@"
+      },
+      "srs-name": "autodetect",
+      "srs": "",
+      "advanced": {},
+      "name": "@SHP_FILE@"
+    }
