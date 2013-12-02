@@ -1,0 +1,15 @@
+    {
+      "geometry": "point",
+      "extent": [
+	@SHP_EXTENT@
+      ],
+      "id": "@SHP_FILE@",
+      "class": "",
+      "Datasource": {
+        "file": "@SHP_PATH@"
+      },
+      "srs-name": "WGS84",
+      "srs": "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs",
+      "advanced": {},
+      "name": "@SHP_FILE@"
+    }
