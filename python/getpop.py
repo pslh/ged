@@ -265,7 +265,7 @@ def _extract_data(urban, pop, area, validator, startx=0, starty=0):
                     ' Check file format and GDAL version\n'.format(
                     urban_x, urban_y, lat, lon, ur_value))
                 sys.exit(1)
-            
+
             area_y = area.get_y(lat)
             if area_y >= area.height or area_x >= area.width:
                 area_value = 0
