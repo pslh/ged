@@ -53,6 +53,7 @@
 import sqlite3
 import sys
 import os.path
+import locale
 
 
 class InputError(RuntimeError):
@@ -96,17 +97,7 @@ def _quote_sql(text):
     if(text is None):
         return u'NULL'
     else:
-        #try:
         return u"'{0}'".format(text)
-        #except Exception, e:
-            #print "ERROR: " + e
-            #print "%%%"
-            #print text
-            #print "%%%"
-        #    return u"!!! BAD TEXT HERE !!! {0}".format(e)
-#            sys.stderr.write('Considering non-None text.\n')
-#            sys.stderr.write('text={0}\n'.format(text))
-#            sys.stderr.write('Problem with text {0}: {1}\n'.format(text), e)
 
 
 def _insert_project(project):
@@ -130,7 +121,7 @@ def _insert_project(project):
         );
     """.format(*map(_quote_sql, project))
 
-    sys.stdout.write(_stm)
+    sys.stdout.write(_stm.encode("utf-8"))
     sys.stdout.write('\n\n')
 
 
