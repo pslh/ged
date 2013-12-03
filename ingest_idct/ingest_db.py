@@ -125,29 +125,25 @@ def _insert_object(obj, names):
     Emit INSERT statements for the given object
     """
 
-    _params = u""
+    _params = u''
     for i in range(0, len(obj)):
-        _name = names[i]
         #sys.stderr.write('!! Considering name {0}'.format(_name))
-        _val = obj[i]
+
         if(i > 0):
             _params += ', '
 
+        _name = names[i]
+        _val = obj[i]
+
         if(_name in _OBJ_FLOAT_NAMES or _name in _OBJ_INT_NAMES):
-            if(_val is None):
+            #
+            # It seems some SQLite DBs have '' as a value for integers
+            # We treat such values as NULL
+            #
+            if(_val is None or _val == ''):
                 _params += u'NULL'
             else:
-                if(_val == ''):
-                    #
-                    # It appears that in some cases e.g. DIRECT_1 we have
-                    # a value of the empty string '' for integer fields.
-                    # Emit a warning and replace with NULL
-                    #
-                    _params += u'NULL'
-                    sys.stderr.write('WARNING: Empty string for {1}\n'.format(
-                        _val, _name))
-                else:
-                    _params += u'{0}'.format(_val)
+                _params += u'{0}'.format(_val)
         else:
             _params += _quote_sql(_val)
 
@@ -168,8 +164,12 @@ def _insert_all_objects(cursor):
     """
     Emit INSERT statements for all entries in GEM_OBJECT
     """
+    _names = None
     for _object in cursor.execute('SELECT * FROM GEM_OBJECT'):
-        _names = list([desc[0] for desc in cursor.description])
+        # Obtain list of field names from first row
+        if(_names is None):
+            _names = list([desc[0] for desc in cursor.description])
+
         _insert_object(_object, _names)
 
 
