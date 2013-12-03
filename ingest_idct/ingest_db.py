@@ -53,7 +53,6 @@
 import sqlite3
 import sys
 import os.path
-import locale
 
 
 class InputError(RuntimeError):
@@ -104,7 +103,7 @@ def _insert_project(project):
     """
     Emit INSERT statements for the given project
     """
-    print project
+    #print project
     # Note must use UTF-8
     _stm = u"""
         INSERT INTO level3.project (
@@ -156,9 +155,22 @@ def _insert_object(obj, names):
             _params += ', '
 
         if(_name in _OBJ_FLOAT_NAMES or _name in _OBJ_INT_NAMES):
-            _params += u"{0}".format(_val)
+            if(_val is None):
+                _params += u'NULL'
+            else:
+                if(_val == ''):
+                    #
+                    # It appears that in some cases e.g. DIRECT_1 we have
+                    # a value of the empty string '' for integer fields.
+                    # Emit a warning and replace with NULL
+                    #
+                    _params += u'NULL'
+                    sys.stderr.write('WARNING: Empty string for {1}\n'.format(
+                        _val, _name))
+                else:
+                    _params += u'{0}'.format(_val)
         else:
-            _params += u"{0}".format(_quote_sql(_val))
+            _params += _quote_sql(_val)
 
     # Note must use UTF-8
     _stm = u"""
@@ -166,10 +178,10 @@ def _insert_object(obj, names):
         SELECT
             {0}
         WHERE NOT EXISTS (
-            SELECT obj_uid FROM level3.object WHERE obj_uid={1}
+            SELECT obj_uid FROM level3.object WHERE obj_uid='{1}'
         );
     """.format(_params, obj[0])
-    sys.stdout.write(_stm)
+    sys.stdout.write(_stm.encode("utf-8"))
     sys.stdout.write('\n\n')
 
 
@@ -192,7 +204,7 @@ def ingest_db(input_db, input_source, notes):
         _cursor = _con.cursor()
         _ensure_idct_db(_cursor, input_db)
         _insert_all_projects(_cursor, input_db)
-        #_insert_all_objects(_cursor, input_db)
+        _insert_all_objects(_cursor, input_db)
     except InputError as err:
         sys.stderr.write(u"Failed to ingest {0}: {1}\n".format(
             input_db, err.msg))
