@@ -103,12 +103,30 @@ def _insert_project(project):
     sys.stdout.write('\n\n')
 
 
-def _insert_all_projects(cursor):
+def _insert_contribution(input_source, notes, proj_date, proj_uid):
+    """
+    Emit INSERT statements for contribution table
+    """
+    _stm = u"""
+        INSERT INTO level3.contribution (
+            proj_uid, proj_source, proj_date, notes)
+        SELECT {0}, {1}, {2}, {3}
+        WHERE NOT EXISTS (
+            SELECT proj_uid FROM level3.contribution WHERE proj_uid={0}
+        );
+    """.format(_quote_sql(proj_uid), _quote_sql(input_source),
+               _quote_sql(proj_date), _quote_sql(notes))
+    sys.stdout.write(_stm.encode("utf-8"))
+    sys.stdout.write('\n\n')
+
+
+def _insert_all_projects(cursor, input_source, proj_date, notes):
     """
     Emit INSERT statements for all projects in DB
     """
     for _project in cursor.execute('SELECT * FROM GEM_PROJECT'):
         _insert_project(_project)
+        _insert_contribution(input_source, proj_date, notes, _project[0])
 
 
 _OBJ_FLOAT_NAMES = ('X', 'Y')
@@ -173,7 +191,7 @@ def _insert_all_objects(cursor):
         _insert_object(_object, _names)
 
 
-def ingest_db(input_db, input_source, notes):
+def ingest_db(input_db, input_source, proj_date, notes):
     """
     Interrogate IDCT SQLite DB file and produce SQL for GED
     """
@@ -185,7 +203,7 @@ def ingest_db(input_db, input_source, notes):
         _con = sqlite3.connect(input_db)
         _cursor = _con.cursor()
         _ensure_idct_db(_cursor, input_db)
-        _insert_all_projects(_cursor)
+        _insert_all_projects(_cursor, input_source, proj_date, notes)
         _insert_all_objects(_cursor)
     except InputError as err:
         sys.stderr.write(u"Failed to ingest {0}: {1}\n".format(
@@ -203,18 +221,23 @@ def main():
     Parse command line arguments, call ingest_db
     """
     if (len(sys.argv) < 3):
-        sys.exit(u"Usage: {0} <inputdb> <source> [notes]\n".format(
+        sys.exit(u"Usage: {0} <inputdb> <source> [date] [notes]\n".format(
             sys.argv[0]))
 
-    input_db = sys.argv[1]
-    input_source = sys.argv[2]
+    _input_db = sys.argv[1]
+    _input_source = sys.argv[2]
 
     if (len(sys.argv) > 3):
-        notes = sys.argv[3]
+        _proj_date = sys.argv[3]
     else:
-        notes = None
+        _proj_date = None
 
-    ingest_db(input_db, input_source, notes)
+    if (len(sys.argv) > 4):
+        _notes = sys.argv[4]
+    else:
+        _notes = None
+
+    ingest_db(_input_db, _input_source, _proj_date, _notes)
 
 
 #
