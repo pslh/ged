@@ -17,39 +17,16 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with OpenQuake.  If not, see <http://www.gnu.org/licenses/>.
 #
+"""
+Generate SQL statements suitable for populating GED level3 DB from an
+IDCT SQLite DB file.
 
-#
-# Input parameters
-#  input file - String path to SQLite 3 DB file
-#  source - String description of source of data
-#  notes - [Optional] string description
+Input parameters:
+ input file - String path to SQLite 3 DB file
+ source - String description of source of data
+ notes - [Optional] string description
+"""
 
-#
-# Either need to connect to GED DB or to write out SQL that can be
-# exectuted with psql
-
-#
-# INSERT INTO level3.project (
-#    proj_uid, project_name, project_date, hazard_type...
-#  )
-#  SELECT
-#   '@PROJ_UID@', '@PROJ_NAME@', '@PROJ_DATE@',...
-#  WHERE NOT EXISTS (
-#    SELECT proj_uid FROM level3.project
-#    WHERE proj_uid='@PROJ_UID@'
-#  );
-#
-
-#
-#
-# Open DB file
-# If object and project tables not present, exit with error
-#
-# For each project in SQLite DB
-#  if project does not exist in GED, create project entry in GED
-#
-#
-#
 import sqlite3
 import sys
 import os.path
@@ -63,6 +40,7 @@ class InputError(RuntimeError):
     """
 
     def __init__(self, msg):
+        super(InputError, self).__init__(msg)
         self.msg = msg
 
 
@@ -118,13 +96,14 @@ def _insert_project(project):
         WHERE NOT EXISTS (
             SELECT proj_uid FROM level3.project WHERE proj_uid={0}
         );
-    """.format(*map(_quote_sql, project))
+    """.format(*[_quote_sql(value) for value in project])
+    #.format(*map(_quote_sql, project))
 
     sys.stdout.write(_stm.encode("utf-8"))
     sys.stdout.write('\n\n')
 
 
-def _insert_all_projects(cursor, input_db):
+def _insert_all_projects(cursor):
     """
     Emit INSERT statements for all projects in DB
     """
@@ -185,9 +164,12 @@ def _insert_object(obj, names):
     sys.stdout.write('\n\n')
 
 
-def _insert_all_objects(cursor, input_db):
+def _insert_all_objects(cursor):
+    """
+    Emit INSERT statements for all entries in GEM_OBJECT
+    """
     for _object in cursor.execute('SELECT * FROM GEM_OBJECT'):
-        _names = list(map(lambda x: x[0], cursor.description))
+        _names = list([desc[0] for desc in cursor.description])
         _insert_object(_object, _names)
 
 
@@ -203,8 +185,8 @@ def ingest_db(input_db, input_source, notes):
         _con = sqlite3.connect(input_db)
         _cursor = _con.cursor()
         _ensure_idct_db(_cursor, input_db)
-        _insert_all_projects(_cursor, input_db)
-        _insert_all_objects(_cursor, input_db)
+        _insert_all_projects(_cursor)
+        _insert_all_objects(_cursor)
     except InputError as err:
         sys.stderr.write(u"Failed to ingest {0}: {1}\n".format(
             input_db, err.msg))
