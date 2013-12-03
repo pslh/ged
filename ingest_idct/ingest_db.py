@@ -52,6 +52,7 @@
 #
 import sqlite3
 import sys
+import os.path
 
 
 class InputError(RuntimeError):
@@ -65,28 +66,26 @@ class InputError(RuntimeError):
         self.msg = msg
 
 
-def _ensure_idct_db(cur, input_db):
+def _ensure_idct_db(cursor, input_db):
     """
     Raise an InputError if input_db is not a valid IDCT SQLite file
     """
 
-    cur.execute("""
+    cursor.execute("""
             SELECT count(name) AS num_tables
             FROM sqlite_master
             WHERE name IN ('GEM_PROJECT', 'GEM_OBJECT', 'GED', 'MEDIA_DETAIL');
             """)
-    row = cur.fetchone()
+    row = cursor.fetchone()
 
     if(row):
-        num_tables = row[0]
+        _num_tables = row[0]
 
-    if(num_tables != 4):
+    if(_num_tables != 4):
         # ERROR - DB does not contain all required tables.
         raise InputError(
-            "DB schema {0} does not contain the expected tables.\n".format(
+            u"DB schema {0} does not contain the expected tables.\n".format(
             input_db))
-
-    sys.stderr.write("Found {0} tables".format(num_tables))
 
 
 def _quote_sql(text):
@@ -95,16 +94,27 @@ def _quote_sql(text):
     Used to construct query strings from parameters that might be None
     """
     if(text is None):
-        return 'NULL'
+        return u'NULL'
     else:
+        #try:
         return u"'{0}'".format(text)
+        #except Exception, e:
+            #print "ERROR: " + e
+            #print "%%%"
+            #print text
+            #print "%%%"
+        #    return u"!!! BAD TEXT HERE !!! {0}".format(e)
+#            sys.stderr.write('Considering non-None text.\n')
+#            sys.stderr.write('text={0}\n'.format(text))
+#            sys.stderr.write('Problem with text {0}: {1}\n'.format(text), e)
 
 
 def _insert_project(project):
     """
     Emit INSERT statements for the given project
     """
-
+    print project
+    # Note must use UTF-8
     _stm = u"""
         INSERT INTO level3.project (
             proj_uid, proj_name, proj_date, hazrd_type, proj_locle,
@@ -116,8 +126,7 @@ def _insert_project(project):
             {7}, {8},
             {9}, {10}, {11}, {12}
         WHERE NOT EXISTS (
-            SELECT proj_uid FROM level3.project
-            WHERE proj_uid={0}
+            SELECT proj_uid FROM level3.project WHERE proj_uid={0}
         );
     """.format(*map(_quote_sql, project))
 
@@ -125,12 +134,58 @@ def _insert_project(project):
     sys.stdout.write('\n\n')
 
 
-def _insert_all_projects(cur, input_db):
+def _insert_all_projects(cursor, input_db):
     """
     Emit INSERT statements for all projects in DB
     """
-    for project in cur.execute('SELECT * FROM GEM_PROJECT'):
-        _insert_project(project)
+    for _project in cursor.execute('SELECT * FROM GEM_PROJECT'):
+        _insert_project(_project)
+
+
+_OBJ_FLOAT_NAMES = ('X', 'Y')
+_OBJ_INT_NAMES = (
+    'STORY_AG_1', 'STORY_AG_2', 'STORY_BG_1', 'STORY_BG_2',
+    'HT_GR_GF_1', 'HT_GR_GF_2', 'SLOPE',
+    'YR_BUILT_1', 'YR_BUILT_2', 'YR_RETRO',
+    'DIRECT_1', 'DIRECT_2'
+)
+
+
+def _insert_object(obj, names):
+    """
+    Emit INSERT statements for the given object
+    """
+
+    _params = u""
+    for i in range(0, len(obj)):
+        _name = names[i]
+        #sys.stderr.write('!! Considering name {0}'.format(_name))
+        _val = obj[i]
+        if(i > 0):
+            _params += ', '
+
+        if(_name in _OBJ_FLOAT_NAMES or _name in _OBJ_INT_NAMES):
+            _params += u"{0}".format(_val)
+        else:
+            _params += u"{0}".format(_quote_sql(_val))
+
+    # Note must use UTF-8
+    _stm = u"""
+        INSERT INTO level3.object
+        SELECT
+            {0}
+        WHERE NOT EXISTS (
+            SELECT obj_uid FROM level3.object WHERE obj_uid={1}
+        );
+    """.format(_params, obj[0])
+    sys.stdout.write(_stm)
+    sys.stdout.write('\n\n')
+
+
+def _insert_all_objects(cursor, input_db):
+    for _object in cursor.execute('SELECT * FROM GEM_OBJECT'):
+        _names = list(map(lambda x: x[0], cursor.description))
+        _insert_object(_object, _names)
 
 
 def ingest_db(input_db, input_source, notes):
@@ -140,10 +195,18 @@ def ingest_db(input_db, input_source, notes):
     con = None
 
     try:
-        con = sqlite3.connect(input_db)
-        cur = con.cursor()
-        _ensure_idct_db(cur, input_db)
-        _insert_all_projects(cur, input_db)
+        if(not os.path.isfile(input_db)):
+            raise InputError(u"DB file '{0}' does not exist".format(input_db))
+        _con = sqlite3.connect(input_db)
+        _cursor = _con.cursor()
+        _ensure_idct_db(_cursor, input_db)
+        _insert_all_projects(_cursor, input_db)
+        #_insert_all_objects(_cursor, input_db)
+    except InputError as err:
+        sys.stderr.write(u"Failed to ingest {0}: {1}\n".format(
+            input_db, err.msg))
+    except Exception as err:
+        sys.stderr.write(u"Failed to ingest {0}: {1}\n".format(input_db, err))
 
     finally:
         if con:
@@ -155,7 +218,8 @@ def main():
     Parse command line arguments, call ingest_db
     """
     if (len(sys.argv) < 3):
-        sys.exit("Usage: {0} <inputdb> <source> [notes]\n".format(sys.argv[0]))
+        sys.exit(u"Usage: {0} <inputdb> <source> [notes]\n".format(
+            sys.argv[0]))
 
     input_db = sys.argv[1]
     input_source = sys.argv[2]
