@@ -1,0 +1,6 @@
+#
+# Ignore . files under here
+#
+**/.db_con_param.dat
+**/.db_con_param.dat.backup
+**/*.xls*
