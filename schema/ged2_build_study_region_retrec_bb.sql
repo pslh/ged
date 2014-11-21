@@ -1,14 +1,19 @@
-DROP FUNCTION IF EXISTS ged2.build_study_region_retrec_bb(numeric);
-DROP FUNCTION IF EXISTS ged2.build_study_region_retrec_bb(INTEGER, INTEGER);
+DROP FUNCTION IF EXISTS ged2.build_study_region_retrec_bb(
+DOUBLE PRECISION,
+DOUBLE PRECISION,
+DOUBLE PRECISION,
+DOUBLE PRECISION,
+INTEGER, INTEGER);
 
 -- Function: ged2.build_study_region(numeric)
 
-CREATE OR REPLACE FUNCTION ged2.build_study_region_retrec_bb(
-	in_study_region_id INTEGER, 
+CREATE OR REPLACE FUNCTION 
+ged2.build_study_region_retrec_bb(
 	in_min_x DOUBLE PRECISION,
 	in_min_y DOUBLE PRECISION,
 	in_max_x DOUBLE PRECISION,
 	in_max_y DOUBLE PRECISION,
+	in_study_region_id INTEGER, 
 	in_occupancy_id INTEGER DEFAULT 0)
   RETURNS SETOF ged2.exposure_t AS
 $BODY$
@@ -126,6 +131,11 @@ $BODY$
   LANGUAGE plpgsql STABLE
   COST 100
   ROWS 1000;
-ALTER FUNCTION ged2.build_study_region_retrec(INTEGER, INTEGER)
+ALTER FUNCTION ged2.build_study_region_retrec_bb(
+DOUBLE PRECISION,
+DOUBLE PRECISION,
+DOUBLE PRECISION,
+DOUBLE PRECISION,
+INTEGER, INTEGER)
   OWNER TO paul;
 

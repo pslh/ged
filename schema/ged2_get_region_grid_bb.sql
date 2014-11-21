@@ -39,13 +39,14 @@ BEGIN
 		RETURN;
 	END IF;
 	
-	RETURN QUERY SELECT * FROM ged2.get_region_grid(distribution_record, 
-			in_min_x,in_min_y, in_max_x, in_max_y);
+	RETURN QUERY SELECT * FROM ged2.get_region_grid_bb( 
+			in_min_x,in_min_y, in_max_x, in_max_y, 
+			distribution_record);
 END;
 $BODY$
   LANGUAGE plpgsql IMMUTABLE
 ;
-ALTER FUNCTION ged2.get_region_grid(INTEGER, INTEGER)
+ALTER FUNCTION ged2.get_region_grid_bb(DOUBLE PRECISION, DOUBLE PRECISION, DOUBLE PRECISION, DOUBLE PRECISION, integer, integer)
   OWNER TO paul;
 
 --
@@ -68,6 +69,7 @@ CREATE OR REPLACE FUNCTION ged2.get_region_grid_bb(
 $BODY$
 DECLARE  
 	_prefix VARCHAR;
+	_filter VARCHAR;
 BEGIN
 
 	_prefix = 
@@ -75,10 +77,8 @@ BEGIN
 		' ST_X(the_geom) AS lon, ST_Y(the_geom) AS lat ' || 
 		' FROM ged2.grid_point ';
 
-	_filter = concat_ws(',',
-			' AND the_geom && ST_MakeEnvelope(',
-			in_min_x,in_min_y,in_max_x,in_max_y,
-			',4526)');
+	_filter = format(' AND the_geom && ST_MakeEnvelope(%s,%s,%s,%s,4526)',
+			in_min_x,in_min_y,in_max_x,in_max_y);
 	
 	IF distribution_record.custom_geography_id IS NOT NULL 
 	THEN
@@ -95,7 +95,7 @@ BEGIN
 		RETURN QUERY EXECUTE _prefix ||
 			'WHERE gadm_admin_3_id = $1 ' 
 			|| _filter 
-		 USING distribution_record.gadm_admin_3_id,;
+		 USING distribution_record.gadm_admin_3_id;
 	ELSIF distribution_record.gadm_admin_2_id IS NOT NULL
 	THEN
 		RETURN QUERY EXECUTE _prefix || 
@@ -121,5 +121,7 @@ END;
 $BODY$
   LANGUAGE plpgsql IMMUTABLE
 ;
-ALTER FUNCTION ged2.get_region_grid(ged2.geographic_region)
+ALTER FUNCTION ged2.get_region_grid_bb(
+	DOUBLE PRECISION,DOUBLE PRECISION,DOUBLE PRECISION,DOUBLE PRECISION,
+	ged2.geographic_region)
   OWNER TO paul;
