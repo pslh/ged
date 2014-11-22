@@ -20,21 +20,13 @@ $BODY$
 DECLARE  
 	distribution_record RECORD;
 	_geo_region_id	INTEGER;
-	
+	total_pop DOUBLE PRECISION;	
 	return_value ged2.exposure_t;
-	region_pop_rec RECORD;
 	ret_rec RECORD;
 BEGIN
 	-- entry function to generate output CSV file for a given study region  
 	-- version 0.2
-	-- by ZhengHui Hu, modified by Paul Henshaw
-	-- last updated: 2013-10-30
-
-	-- get region population and grid count only once
- 	-- NOTE also that total_grid_count appears not to be used
-	SELECT SUM(pop_value) AS total_population, COUNT(*) AS total_grid_count 
-		INTO region_pop_rec
-		FROM ged2.get_region_grid(in_study_region_id);
+	-- Inital code by ZhengHui Hu, modified by Paul Henshaw
 
 	FOR distribution_record IN
 		--
@@ -62,6 +54,21 @@ BEGIN
 
 	-- For each distribution group...
 	LOOP
+		IF (distribution_record.tot_pop IS NULL)
+		THEN
+			RAISE WARNING 
+				'NULL tot_pop for study region % calculating...' , 
+				in_study_region_id;
+			SELECT SUM(pop_value) INTO total_pop
+				FROM ged2.get_region_grid(in_study_region_id);
+			RAISE NOTICE 
+				'...set total_pop for study region % to %' , 
+				in_study_region_id, total_pop;
+		ELSE
+			total_pop := distribution_record.tot_pop;
+		END IF;
+		
+
 		-- Obtain the ID of the "parent" region which contains the specified region
 		_geo_region_id := ged2.get_parent_geo_region_id(
 					distribution_record.geographic_region_id);
@@ -81,7 +88,7 @@ BEGIN
 		 	SELECT 
 				g.grid_point_id, g.lat, g.lon, 
 				g.is_urban, g.pop_value, 
-				region_pop_rec.total_population AS total_population,
+				total_pop AS total_population,
 				intermediate.ms_sum_fraction_over_dwellings,
 				(pa) AS rpa,	-- pop_allocation
 				(sf) AS rsf, 	-- study_region_facts
