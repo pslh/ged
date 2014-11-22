@@ -22,12 +22,25 @@ DECLARE
 	_geo_region_id	INTEGER;
 	
 	return_value ged2.exposure_t;
+	region_pop_rec RECORD;
 	ret_rec RECORD;
+	start_ts TIMESTAMP;
+	end_ts TIMESTAMP;
 BEGIN
 	-- entry function to generate output CSV file for a given study region  
 	-- version 0.2
 	-- by ZhengHui Hu, modified by Paul Henshaw
 	-- last updated: 2013-10-30
+
+	RAISE NOTICE 'getting total population and grid count... (%)', timeofday();
+	start_ts = clock_timestamp();
+	-- get region population and grid count only once
+ 	-- NOTE also that total_grid_count appears not to be used
+	SELECT SUM(pop_value) AS total_population, COUNT(*) AS total_grid_count 
+		INTO region_pop_rec
+		FROM ged2.get_region_grid(in_study_region_id);
+	end_ts = clock_timestamp();
+	RAISE NOTICE '... DONE getting total population and grid count (%)', end_ts-start_ts;
 
 	FOR distribution_record IN
 		--
@@ -70,22 +83,26 @@ BEGIN
 				SELECT * FROM ged2.get_region_grid_bb(
 					in_min_x,in_min_y,in_max_x,in_max_y,
 					distribution_record.study_region_id)
-			),
-			pop_summary AS (
-				-- Obtain total population count for WHOLE region
-				SELECT SUM(pop_value) AS total_population, COUNT(*) AS total_grid_count
-					FROM ged2.get_region_grid(distribution_record.study_region_id)
 			)
+			-- ,
+			-- pop_summary AS (
+				-- Obtain total population count for WHOLE region
+				-- SELECT SUM(pop_value) AS total_population, COUNT(*) AS total_grid_count
+				--	FROM ged2.get_region_grid(distribution_record.study_region_id)
+			-- 	SELECT region_pop_rec.total_population AS total_population, 
+			-- 		region_pop_rec.total_grid_count AS total_grid_count
+			-- )
 		 	SELECT 
 				g.grid_point_id, g.lat, g.lon, 
 				g.is_urban, g.pop_value, 
-				pop_summary.total_population,
+				-- pop_summary.total_population,
+				region_pop_rec.total_population AS total_population,
 				intermediate.ms_sum_fraction_over_dwellings,
 				(pa) AS rpa,	-- pop_allocation
 				(sf) AS rsf, 	-- study_region_facts
 				(dv) AS rdv	-- dist_values
 			FROM tmp_grid_points g
-			LEFT OUTER JOIN pop_summary ON TRUE
+			-- LEFT OUTER JOIN pop_summary ON TRUE
 			INNER JOIN ged2.pop_allocation pa 
 			  ON g.is_urban=pa.is_urban AND 
 			  	 pa.geographic_region_id=_geo_region_id AND 
