@@ -1,8 +1,11 @@
-DROP FUNCTION IF EXISTS ged2.get_region_grid_bb(DOUBLE PRECISION, DOUBLE PRECISION, DOUBLE PRECISION, DOUBLE PRECISION, integer, integer);
-
-DROP FUNCTION IF EXISTS ged2.get_region_grid_bb(
-	DOUBLE PRECISION,DOUBLE PRECISION,DOUBLE PRECISION,DOUBLE PRECISION,
-	ged2.geographic_region);
+--
+-- Functions to obtain grid points for a given study_region
+-- limited to a bounding box
+--
+--DROP FUNCTION IF EXISTS ged2.get_region_grid_bb(DOUBLE PRECISION, DOUBLE PRECISION, DOUBLE PRECISION, DOUBLE PRECISION, integer, integer);
+--DROP FUNCTION IF EXISTS ged2.get_region_grid_bb(
+--	DOUBLE PRECISION,DOUBLE PRECISION,DOUBLE PRECISION,DOUBLE PRECISION,
+--	ged2.geographic_region);
 
 --
 -- RETURN a SQL Query to obtain the grid for the given region
@@ -77,8 +80,10 @@ BEGIN
 		' ST_X(the_geom) AS lon, ST_Y(the_geom) AS lat ' || 
 		' FROM ged2.grid_point ';
 
-	_filter = format(' AND the_geom && ST_MakeEnvelope(%s,%s,%s,%s,4526)',
-			in_min_x,in_min_y,in_max_x,in_max_y);
+	_filter = format(' AND pop_value > 0 ' ||
+			 ' AND the_geom && ' || 
+			 ' ST_MakeEnvelope(%s,%s,%s,%s,4526)',
+			 in_min_x,in_min_y,in_max_x,in_max_y);
 	
 	IF distribution_record.custom_geography_id IS NOT NULL 
 	THEN
