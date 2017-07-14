@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nrml xmlns="http://openquake.org/xmlns/nrml/0.4">
+	<exposureModel id="ex1" category="buildings" taxonomySource="GEM taxonomy">
+		<description>Exposure model Peru_v2</description>
+		<conversions>
+			<costTypes>
+				<costType name="structural" type="per_asset" unit="USD"/>
+			</costTypes>
+		</conversions>
+		<assets>
+			<asset id="a0" number="860.58"  taxonomy="ER+ETR_H1" >
+				<location lon="-77.8565" lat="-6.24774" />
+				<costs>
+					<cost type="structural" value="12000"/>
+				</costs>
+				<occupancies>
+					<occupancy occupants="3234.00671" period="night"/>
+				</occupancies>
+			</asset>
+			<asset id="a1" number="116.86"  taxonomy="ER+ETR_H2" >
+				<location lon="-77.8565" lat="-6.24774" />
+				<costs>
+					<cost type="structural" value="15600"/>
+				</costs>
+				<occupancies>
+					<occupancy occupants="570.9064401" period="night"/>
+				</occupancies>
+			</asset>
+			<asset id="a2" number="2.83"  taxonomy="LFINF_H1" >
+				<location lon="-77.8565" lat="-6.24774" />
+				<costs>
+					<cost type="structural" value="72000"/>
+				</costs>
+				<occupancies>
+					<occupancy occupants="10.65763025" period="night"/>
+				</occupancies>
+			</asset>
+			<asset id="a3" number="6.72"  taxonomy="LFINF_H1_DNO" >
+				<location lon="-77.8565" lat="-6.24774" />
+				<costs>
+					<cost type="structural" value="31500"/>
+				</costs>
+				<occupancies>
+					<occupancy occupants="25.30716442" period="night"/>
+				</occupancies>
+			</asset>
+			<asset id="a4" number="6.53"  taxonomy="LFINF_H2" >
+				<location lon="-77.8565" lat="-6.24774" />
+				<costs>
+					<cost type="structural" value="93600"/>
+				</costs>
+				<occupancies>
+					<occupancy occupants="31.97289076" period="night"/>
+				</occupancies>
+			</asset>
+			<asset id="a5" number="10.34"  taxonomy="LFINF_H2_DNO" >
+				<location lon="-77.8565" lat="-6.24774" />
+				<costs>
+					<cost type="structural" value="40950"/>
+				</costs>
+				<occupancies>
+					<occupancy occupants="50.61432884" period="night"/>
+				</occupancies>
+			</asset>
+			<asset id="a6" number="5.96"  taxonomy="LFINF_H3" >
+				<location lon="-77.8565" lat="-6.24774" />
+				<costs>
+					<cost type="structural" value="205200"/>
+				</costs>
+				<occupancies>
+					<occupancy occupants="63.94578153" period="night"/>
+				</occupancies>
+			</asset>
+			<asset id="a7" number="4.72"  taxonomy="LFINF_H3_DNO" >
+				<location lon="-77.8565" lat="-6.24774" />
+				<costs>
+					<cost type="structural" value="89775"/>
+				</costs>
+				<occupancies>
+					<occupancy occupants="50.61432884" period="night"/>
+				</occupancies>
+			</asset>
+			<asset id="a8" number="0.31"  taxonomy="LWAL_H5" >
+				<location lon="-77.8565" lat="-6.24774" />
+				<costs>
+					<cost type="structural" value="1440000"/>
+				</costs>
+				<occupancies>
+					<occupancy occupants="23.04759617" period="night"/>
+				</occupancies>
+			</asset>
+			<asset id="a9" number="62.32"  taxonomy="MCF_H1" >
+				<location lon="-77.8565" lat="-6.24774" />
+				<costs>
+					<cost type="structural" value="72000"/>
+				</costs>
+				<occupancies>
+					<occupancy occupants="234.1918816" period="night"/>
+				</occupancies>
+			</asset>
+		</assets>
+	</exposureModel>
+</nrml>
