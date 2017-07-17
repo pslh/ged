@@ -119,9 +119,9 @@ def _import_cost_types(cursor, ex, model_id):
 
 ASSET_QUERY = """
 INSERT INTO level2.asset (
-  exposure_model_id,asset_ref,taxonomy,number_of_units,area,lat,lon)
+  exposure_model_id,asset_ref,taxonomy,number_of_units,area,the_geom)
 VALUES (
- %s,%s,%s,%s,%s,%s,%s
+ %s,%s,%s,%s,%s,ST_SetSRID(ST_MakePoint(%s,%s),4326)
 )
 RETURNING id"""
 
@@ -137,7 +137,7 @@ def _import_asset(cursor, asset, model_id):
         asset.attrib.get('taxonomy'),
         asset.attrib.get('number'),
         asset.attrib.get('area'),
-        loc['lat'], loc['lon']
+        loc['lon'], loc['lat']
     ])
     return cursor.fetchone()[0]
 
@@ -191,13 +191,14 @@ def import_exposure_model(ex):
         verbose_message('Inserted model, id={0}\n'.format(model_id))
         ctd = _import_cost_types(cursor, ex, model_id)
         _import_assets(cursor, ex, ctd, model_id)
+        return model_id
 
 
 def import_exposure_file(nrml_file):
     """
     Import exposure from a NRML file
     """
-    import_exposure_model(read(nrml_file).exposureModel)
+    return import_exposure_model(read(nrml_file).exposureModel)
 
 
 if __name__ == '__main__':
@@ -207,4 +208,6 @@ if __name__ == '__main__':
 
     for fname in sys.argv[1:]:
         verbose_message("Importing {0}\n".format(fname))
-        import_exposure_file(fname)
+        imported_id = import_exposure_file(fname)
+        verbose_message("Imported model DB id = {0}\n".format(
+            imported_id))

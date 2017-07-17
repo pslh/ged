@@ -69,7 +69,11 @@ SELECT * FROM level2.model_cost_type WHERE exposure_model_id=%s
 """
 
 ASSET_QUERY = """
-SELECT * FROM level2.asset WHERE exposure_model_id=%s
+SELECT id, exposure_model_id, asset_ref, taxonomy, number_of_units, area, 
+       ST_Y(the_geom) AS lat, ST_X(the_geom) AS lon 
+  FROM level2.asset 
+ WHERE exposure_model_id=%s
+ ORDER BY id
 """
 
 COST_QUERY = """
