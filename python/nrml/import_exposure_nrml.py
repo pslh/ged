@@ -31,7 +31,7 @@ from django.conf import settings
 import db_settings
 settings.configure(DATABASES=db_settings.DATABASES)
 
-VERBOSE = True
+VERBOSE = False
 
 
 def verbose_message(msg):
@@ -149,6 +149,32 @@ OCC_QUERY = """INSERT INTO level2.occupancy (
 VALUES (%s,%s,%s)"""
 
 
+def _get_occupancies(asset):
+    """
+    Get occupancy nodes or empty list if not present
+    """
+    occs = []
+    try:
+        occs = asset.occupancies
+    except Exception:
+        # ignore errors
+        pass
+    return occs
+
+
+def _get_costs(asset):
+    """
+    Get asset cost nodes or empty list if not present
+    """
+    occs = []
+    try:
+        occs = asset.costs
+    except Exception:
+        # ignore errors
+        pass
+    return occs
+
+
 def _import_assets(cursor, ex, ctd, model_id):
     """
     Import all assets and related cost and occupancy information
@@ -163,7 +189,7 @@ def _import_assets(cursor, ex, ctd, model_id):
         asset_count += 1
         asset_id = _import_asset(cursor, asset, model_id)
 
-        for cost in asset.costs:
+        for cost in _get_costs(asset):
             cursor.execute(COST_QUERY, [
                 # Why is the type attribute a list?
                 # Get cost type id from dict
@@ -172,7 +198,7 @@ def _import_assets(cursor, ex, ctd, model_id):
                 asset_id
             ])
 
-        for occ in asset.occupancies:
+        for occ in _get_occupancies(asset):
             cursor.execute(OCC_QUERY, [
                 occ.attrib.get('period'),
                 occ['occupants'],
